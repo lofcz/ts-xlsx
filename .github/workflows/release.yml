@@ -40,6 +40,8 @@ jobs:
       - name: Build and check package
         run: pnpm run build && pnpm run typecheck:dist && pnpm run smoke:dist && pnpm run size
       - name: Validate OOXML
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: pnpm run test:ooxml
       - name: Bump package version
         id: version
