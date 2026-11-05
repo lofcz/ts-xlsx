@@ -67,7 +67,7 @@ concurrency:
 jobs:
   publish:
     name: npm publish
-    if: github.event_name != 'push'
+    if: github.repository == 'shbernal/ts-xlsx' && github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # The release's tag restriction lives in the environment declared by environment.yml. There is
