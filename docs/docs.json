@@ -16,6 +16,7 @@
         "guide/browser",
         "migrating-from-exceljs",
         "charts",
+        "workbook-fidelity",
         "publishing"
       ]
     },
