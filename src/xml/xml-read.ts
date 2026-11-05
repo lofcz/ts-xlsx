@@ -287,6 +287,45 @@ export interface TagRange {
   readonly selfClosing: boolean;
 }
 
+/** A direct child of a metadata container, excluding identically named nested extensions. */
+export function directChildRange(
+  source: string,
+  parent: string,
+  child: string,
+): ElementRange | undefined {
+  const root = elementRange(source, [parent]);
+  if (!root) return undefined;
+  const offset = root.contentStart;
+  let depth = 0;
+  let pending:
+    | {start: number; contentStart: number; name: string; attrs: XmlAttributes}
+    | undefined;
+  for (const tag of tagRanges(source.slice(root.contentStart, root.contentEnd))) {
+    if (tag.close) {
+      depth--;
+      if (pending && depth === 0)
+        return {...pending, end: offset + tag.end, contentEnd: offset + tag.start};
+    } else {
+      if (depth === 0 && localName(tag.name) === child) {
+        const start = offset + tag.start,
+          contentStart = offset + tag.end;
+        if (tag.selfClosing)
+          return {
+            start,
+            contentStart,
+            end: contentStart,
+            contentEnd: contentStart,
+            name: tag.name,
+            attrs: tag.attrs,
+          };
+        pending = {start, contentStart, name: tag.name, attrs: tag.attrs};
+      }
+      if (!tag.selfClosing) depth++;
+    }
+  }
+  return undefined;
+}
+
 const NO_ATTRIBUTES: XmlAttributes = Object.freeze(Object.create(null) as XmlAttributes);
 
 /**

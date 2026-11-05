@@ -43,6 +43,8 @@ export interface PreservedPart {
  * rewired.
  */
 export interface PreservedWorksheetReference {
+  /** Original id used by preserved worksheet markup; remapped by the package writer. */
+  readonly sourceRelationshipId?: string;
   readonly element: 'drawing' | 'legacyDrawingHF' | undefined;
   readonly relType: string;
   readonly entryPath: string;

@@ -25,6 +25,7 @@ import {
 import {scratchDir} from '../../scripts/repo.ts';
 import type {ChartType} from '../../src/core/chart.ts';
 import {Workbook} from '../../src/core/workbook.ts';
+import {nativeFeatureWorkbook} from '../../src/io/xlsx/native-features.test-support.ts';
 import {readXlsx} from '../../src/io/xlsx/read.ts';
 import {WorkbookStreamWriter} from '../../src/io/xlsx/write-stream.ts';
 import {writeXlsx} from '../../src/io/xlsx/write.ts';
@@ -51,6 +52,8 @@ const WRITER_FILES = [
   'streaming-inline.xlsx',
   'streaming-shared.xlsx',
   'strict-rewritten.xlsx',
+  'native-features.xlsx',
+  'native-features-roundtrip.xlsx',
 ] as const;
 
 // A Strict workbook read and written back: every write is Transitional, so a part carried through as
@@ -130,6 +133,13 @@ async function writeBufferedWorkbook(file: string): Promise<void> {
     'scatter',
     'bubble',
     'radar',
+    'waterfall',
+    'histogram',
+    'pareto',
+    'funnel',
+    'treemap',
+    'sunburst',
+    'boxWhisker',
   ];
   for (const [index, type] of chartTypes.entries()) {
     sheet.addChart(
@@ -137,6 +147,21 @@ async function writeBufferedWorkbook(file: string): Promise<void> {
         type,
         title: `${type} & labels`,
         showValues: true,
+        ...(type === 'boxWhisker'
+          ? {
+              valueAxis: {
+                min: 0,
+                max: 10,
+                majorUnit: 2,
+                minorUnit: 1,
+                formatCode: '0.0',
+                title: 'Values',
+              },
+              dataLabels: {showCategory: true, separator: ' / ', position: 't' as const},
+              boxWhisker: {quartileMethod: 'inclusive' as const},
+            }
+          : {}),
+        ...(type === 'histogram' ? {binning: {width: 2}} : {}),
         series: [
           {
             name: 'Revenue',
@@ -162,6 +187,32 @@ async function writeBufferedWorkbook(file: string): Promise<void> {
     {tl: {col: 12, row: 0}, br: {col: 20, row: 20}},
   );
   workbook.addWorksheet('Hidden', {state: 'veryHidden'});
+  sheet.addChart(
+    {
+      type: 'line',
+      categories: {values: [46000, 46001, 46002]},
+      categoryAxis: {type: 'date', majorUnit: 1, majorTimeUnit: 'days'},
+      valueAxis: {logBase: 10, min: 1},
+      dataLabels: {showCategory: true, formatCode: '0.0', position: 't', separator: ';'},
+      series: [
+        {
+          name: 'Analysis',
+          values: {values: [10, 20, 30]},
+          trendlines: [{type: 'poly', order: 2, displayEquation: true}],
+          errorBars: [{type: 'cust', plus: {values: [1, 2, 3]}, minus: {values: [1, 2, 3]}}],
+        },
+      ],
+    },
+    {tl: {col: 20, row: 0}, ext: {width: 480, height: 320}},
+  );
+  workbook.addChartSheet('Chart tab', {
+    type: 'stock',
+    series: [
+      {name: 'High', values: {values: [20, 30, 40]}},
+      {name: 'Low', values: {values: [5, 10, 20]}},
+      {name: 'Close', values: {values: [15, 20, 35]}},
+    ],
+  });
   workbook.view.visibility = 'hidden';
   await writeFile(file, writeXlsx(workbook));
 }
@@ -229,6 +280,9 @@ async function main(): Promise<void> {
   const temp = scratchDir('ooxml');
   try {
     const at = (name: string) => path.join(temp, name);
+    const nativeBytes = writeXlsx(nativeFeatureWorkbook());
+    await writeFile(at('native-features.xlsx'), nativeBytes);
+    await writeFile(at('native-features-roundtrip.xlsx'), writeXlsx(readXlsx(nativeBytes)));
     const invalid = at('invalid.xlsx');
     const truncated = at('truncated.xlsx');
 

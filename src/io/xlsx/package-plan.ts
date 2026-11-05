@@ -161,6 +161,7 @@ export interface PreservedPartPlan {
 // sheet's generated parts, so a preserved reference never renumbers an id already threaded into the
 // sheet XML.
 export interface ResolvedPreservedReference {
+  readonly sourceRelationshipId?: string;
   readonly element: 'drawing' | 'legacyDrawingHF' | undefined;
   readonly relType: string;
   readonly entryPath: string;
@@ -281,6 +282,7 @@ export function planMedia(workbook: Workbook, sheets: readonly Worksheet[]): Med
   };
   for (const sheet of sheets) {
     for (const image of sheet.images) use(image.imageId, sheet.name, 'anchor');
+    for (const image of sheet.cellImages) use(image.imageId, sheet.name, 'anchor');
     if (sheet.backgroundImageId !== undefined) {
       use(sheet.backgroundImageId, sheet.name, 'background');
     }
@@ -429,6 +431,9 @@ export function planPreservedParts(
 
   const perSheet = sheets.map((sheet): ResolvedPreservedReference[] =>
     sheet.preservedReferences.map((reference) => ({
+      ...(reference.sourceRelationshipId
+        ? {sourceRelationshipId: reference.sourceRelationshipId}
+        : {}),
       element: reference.element,
       relType: reference.relType,
       entryPath: resolveRemapped(remap, reference.entryPath),

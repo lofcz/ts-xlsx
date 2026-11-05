@@ -8,9 +8,11 @@ import {strToU8, zip, zipSync} from 'fflate';
 // stitches the serialised parts (from `workbook-xml.ts` and `worksheet-xml.ts`) into the
 // part map. The row/cell renderer the streaming writer shares lives in `row-xml.ts`.
 
+import type {ChartCacheDiagnostic} from '../../core/chart-cache.ts';
 import type {Person} from '../../core/comment-thread.ts';
 import {formulaNamesInScope} from '../../core/formula.ts';
 import {pictureProperties} from '../../core/image.ts';
+import {INTERNAL} from '../../core/internal.ts';
 import type {Workbook} from '../../core/workbook.ts';
 import type {Worksheet} from '../../core/worksheet.ts';
 import {AuthoringError, InternalError, quoted} from '../../errors.ts';
@@ -18,8 +20,11 @@ import {isRelType} from '../../rel-type.ts';
 import {relsPathFor, THEME_PART_PATH} from '../opc/part-paths.ts';
 import {relsPartXml} from '../opc/rels.ts';
 import {FIXED_ENTRY_MTIME} from '../opc/zip-mtime.ts';
-import {RICH_VALUE_STRUCTURES_XML, WorkbookMetadataTable} from './cell-metadata.ts';
+import {cellImageMetadata, appendCellImageParts} from './cell-images.ts';
+import {WorkbookMetadataTable} from './cell-metadata.ts';
 import {appendChartParts} from './chart-parts.ts';
+import {appendChartSheets} from './chart-sheets.ts';
+import {appendCheckboxParts} from './checkboxes.ts';
 import {collectComments, commentsXml, liveCells, vmlDrawingXml} from './comments.ts';
 import {planHyperlinks} from './hyperlinks.ts';
 import {type DrawingImage, drawingXml} from './images.ts';
@@ -67,9 +72,11 @@ import {
   worksheetPart,
 } from './part-names.ts';
 import {pivotCacheDefinitionXml, pivotCacheRecordsXml, pivotTableXml} from './pivot.ts';
+import {restoreWorksheetXml} from './preserved-xml.ts';
 import {REL} from './relationships.ts';
 import type {FlushedSheet} from './row-xml.ts';
 import {SharedStringTable} from './shared-strings.ts';
+import {appendSparklineXml} from './sparklines.ts';
 import {StyleRegistry} from './styles.ts';
 import {tableXml} from './tables.ts';
 import {applyThemeOverrides, DEFAULT_THEME_XML} from './theme-xml.ts';
@@ -85,6 +92,8 @@ import {type SheetReferences, worksheetXml} from './worksheet-xml.ts';
 
 /** Options controlling how {@link writeXlsx} serialises a workbook. */
 export interface WriteOptions {
+  /** Collect chart references whose cached values could not be refreshed from local cells. */
+  chartCacheDiagnostics?: ChartCacheDiagnostic[];
   /**
    * Pool string and rich-text cell values into a shared-strings table (`xl/sharedStrings.xml`) that
    * cells reference by index, rather than storing each inline in its cell. Deduplicates repeated text
@@ -556,22 +565,37 @@ function serialiseSheets(context: {
   const {workbook, sheets, plan, styles, sharedStrings, cellMetadata, flushed} = context;
   return sheets.map((sheet, i) => {
     const sheetPlan = plan.perSheet[i] as SheetPlan;
-    return worksheetXml({
-      sheet,
-      tables: sheetPlan.tables,
-      styles,
-      references: resolveSheetReferences(sheetPlan),
-      hyperlinks: sheetPlan.hyperlinks,
-      sharedStrings,
-      cellMetadata,
-      dateEpoch: workbook.dateEpoch,
-      formulaNames: formulaNamesInScope(workbook.definedNames, sheet.name),
-      // Exactly one sheet is marked selected; the model resolves which, so no package can ship with
-      // none selected (no view initialised on open) or with several (an accidental group selection,
-      // where an edit to one sheet lands on all of them).
-      active: i === workbook.activeTabIndex,
-      flushed: flushed?.get(sheet),
-    });
+    return restoreWorksheetXml(
+      appendSparklineXml(
+        cellImageMetadata(
+          worksheetXml({
+            sheet,
+            tables: sheetPlan.tables,
+            styles,
+            references: resolveSheetReferences(sheetPlan),
+            hyperlinks: sheetPlan.hyperlinks,
+            sharedStrings,
+            cellMetadata,
+            dateEpoch: workbook.dateEpoch,
+            formulaNames: formulaNamesInScope(workbook.definedNames, sheet.name),
+            // Exactly one sheet is marked selected; the model resolves which, so no package can ship with
+            // none selected (no view initialised on open) or with several (an accidental group selection,
+            // where an edit to one sheet lands on all of them).
+            active: i === workbook.activeTabIndex,
+            flushed: flushed?.get(sheet),
+          }),
+          sheet,
+          cellMetadata,
+        ),
+        sheet.sparklineGroups,
+      ),
+      sheet[INTERNAL].preservedXml,
+      new Map(
+        sheetPlan.preservedRefs.flatMap((ref) =>
+          ref.sourceRelationshipId ? [[ref.sourceRelationshipId, ref.relId]] : [],
+        ),
+      ),
+    );
   });
 }
 
@@ -675,7 +699,7 @@ function emitPackageParts(context: {
   if (hasCellMetadata) files.add(METADATA_PART, strToU8(cellMetadata.toXml()));
   if (hasRichValues) {
     files.add(RICH_VALUES_PART, strToU8(cellMetadata.richValuesXml()));
-    files.add(RICH_VALUE_STRUCTURES_PART, strToU8(RICH_VALUE_STRUCTURES_XML));
+    files.add(RICH_VALUE_STRUCTURES_PART, strToU8(cellMetadata.richValueStructuresXml()));
   }
   for (const part of media.parts) {
     files.add(mediaPart(part.number, part.extension), part.data);
@@ -747,7 +771,10 @@ export function buildPackageParts(
     cellMetadata,
     sheetXml,
   });
-  appendChartParts(parts, sheets);
+  appendChartParts(parts, sheets, workbook, options.chartCacheDiagnostics);
+  appendCellImageParts(parts, cellMetadata, plan.media);
+  appendCheckboxParts(parts, sheets);
+  appendChartSheets(parts, sheets);
   return parts;
 }
 

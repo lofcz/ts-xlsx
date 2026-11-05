@@ -36,6 +36,7 @@ import type {XfStyle} from '../style/xf-style.ts';
 import {readXlsbPackage} from '../xlsb/read.ts';
 import {readCellMetadata} from './cell-metadata.ts';
 import type {SharedString} from './cell-value.ts';
+import {readSheetCharts} from './chart-read.ts';
 import {applyConditionalFormattings, conditionalFormattingPass} from './conditional-formatting.ts';
 import {
   applyDataValidations,
@@ -44,6 +45,9 @@ import {
 } from './data-validation.ts';
 import {applyHyperlinks, sheetHyperlinkPass} from './hyperlinks.ts';
 import {SHARED_STRINGS_PART, STYLES_PART} from './part-names.ts';
+import {captureWorkbookXml} from './preserved-workbook-xml.ts';
+import {captureWorksheetXml} from './preserved-xml.ts';
+import {readCellFeatures} from './read-cell-features.ts';
 import {applyNotes} from './read-comments.ts';
 import {
   type PackageReadContext,
@@ -131,6 +135,7 @@ export function readXlsx(data: Uint8Array, options: ReadPackageOptions = {}): Wo
   const context = {
     pkg,
     workbook,
+    workbookRels,
     contentTypeOf,
     sharedStrings,
     xfStyles,
@@ -195,7 +200,11 @@ export function readXlsx(data: Uint8Array, options: ReadPackageOptions = {}): Wo
   readWorkbookPersons(context, workbookRels);
   // The names are known from the workbook part alone, which is what lets a sheet's formulas be read
   // against them although the names themselves are registered only after the sheets.
-  const sheetContext: SheetReadContext = {...context, definedNames: definedNames.spellings()};
+  const sheetContext: SheetReadContext = {
+    ...context,
+    workbookRels,
+    definedNames: definedNames.spellings(),
+  };
 
   const sheetOrder: string[] = [];
   // The name is repaired rather than trusted. `addWorksheet` refuses an empty, over-long, duplicate
@@ -206,15 +215,18 @@ export function readXlsx(data: Uint8Array, options: ReadPackageOptions = {}): Wo
   for (const {name, relId, state} of repairedSheetNames(sheets.result())) {
     const target = workbookRels.byId(relId)?.target;
     const sheet = workbook.addWorksheet(name, state === undefined ? undefined : {state});
+    if (workbookRels.byId(relId)?.type.endsWith('/chartsheet')) sheet.kind = 'chartsheet';
     sheetOrder.push(sheet.name);
     readSheet(sheet, target === undefined ? undefined : workbookRels.pathOf(target), sheetContext);
   }
 
   readWorkbookPreservedReferences(context, workbookRels, {
+    sheetRelIds: new Set(sheets.result().map((sheet) => sheet.relId)),
     cacheIdByRelId: pivotCaches.result(),
     externalIndexByRelId: externalReferences.result(),
   });
   readRootPreservedReferences(context);
+  workbook[INTERNAL].preservedXml.push(...captureWorkbookXml(workbookXml));
 
   // Defined names follow the sheets: a scoped name's `localSheetId` indexes the sheet order, which
   // is why the names are read only once every sheet is registered.
@@ -233,6 +245,7 @@ export function readXlsx(data: Uint8Array, options: ReadPackageOptions = {}): Wo
  * shares one object, and {@link readSheet} takes it rather than a run of positional arguments.
  */
 interface SheetReadContext extends PackageReadContext {
+  readonly workbookRels: import('../opc/read-opc.ts').PartRelationships;
   readonly sharedStrings: readonly SharedString[];
   readonly xfStyles: readonly XfStyle[];
   /** What the workbook's `cm` and `vm` values resolve to, for the sheet's cells. */
@@ -306,6 +319,9 @@ function readSheet(sheet: Worksheet, path: string | undefined, context: SheetRea
   readSheetBackground(context, sheetRels, sheet);
   if (sheetXml !== undefined) {
     readSheetPreservedReferences(context, sheetRels, references.result(), sheet);
+    readSheetCharts(context.pkg, sheetRels, sheet);
+    readCellFeatures(context, context.workbookRels, sheetXml, sheet);
+    sheet[INTERNAL].preservedXml.push(...captureWorksheetXml(sheetXml));
   }
 
   readSheetTables(context, sheetRels, sheet, definedNames);

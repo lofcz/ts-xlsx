@@ -32,7 +32,7 @@ import {
   resolveSpecifier,
   sourceFiles,
   specifiers,
-  withoutComments,
+  withoutCommentsOrQuotedStrings,
 } from './module-graph.ts';
 import {ROOT} from './repo.ts';
 import {reportCrash, verdict} from './verdict.ts';
@@ -140,7 +140,7 @@ function main(): void {
   }
 
   for (const file of [...reachable.keys()].sort()) {
-    const source = withoutComments(readFileSync(join(ROOT, file), 'utf8'));
+    const source = withoutCommentsOrQuotedStrings(readFileSync(join(ROOT, file), 'utf8'));
     for (const pattern of NODE_GLOBALS) {
       const match = pattern.exec(source);
       if (match === null) continue;

@@ -10,6 +10,8 @@ Options controlling how [`writeXlsx`](./writing-xlsx.md#writexlsx) serialises a 
 
 ```ts
 interface WriteOptions {
+  /** Collect chart references whose cached values could not be refreshed from local cells. */
+  chartCacheDiagnostics?: ChartCacheDiagnostic[];
   /**
    * Pool string and rich-text cell values into a shared-strings table (`xl/sharedStrings.xml`) that
    * cells reference by index, rather than storing each inline in its cell. Deduplicates repeated text

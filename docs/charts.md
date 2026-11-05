@@ -1,7 +1,8 @@
 # Authoring charts
 
 The `@lofcz/ts-xlsx` fork adds native, editable column, bar, line, area, pie,
-doughnut, scatter, bubble and radar charts. Column/line/area series can be combined
+doughnut, scatter, bubble, radar and stock charts, plus waterfall, histogram,
+Pareto, funnel, treemap, sunburst and box-and-whisker chartEx charts. Column/line/area series can be combined
 and assigned a secondary axis. Titles, legends, colors, data labels, axis bounds,
 number formats, literal data and worksheet references are supported.
 
@@ -26,13 +27,16 @@ const bytes = writeXlsx(workbook);
 ```
 
 `values` supplies cached chart data. `formula` optionally links that data to
-worksheet cells; this library does not evaluate the referenced cells. Null values
+worksheet cells. Writing refreshes caches from cell values, cached formula results
+and defined names; it does not evaluate formulas. Unresolved caches are retained
+and reported through `WriteOptions.chartCacheDiagnostics`. Null values
 are gaps, and all series arrays must have matching lengths. Scatter charts require
 `xValues`; bubble charts additionally require `bubbleSizes`.
 
 Anchors use the same fractional-cell/pixel input as `addImage`. The library copies
 chart options and anchors when they are added. `sheet.charts` returns snapshots;
-`removeChart(index)` removes an authored chart. Worksheet model copies include
+`updateChart(index, patch)` changes imported or authored options, and
+`removeChart(index)` removes the chart. Worksheet model copies include
 authored charts. Row and column edits move their anchors and formula references.
 
 `sheet.addChartPart(part, anchor)` accepts a complete standard DrawingML chart XML
@@ -42,8 +46,18 @@ offsets, like `addImageAnchor`. The writer validates XML well-formedness and own
 package paths, content types, relationship IDs and placement in the worksheet's
 single drawing. The caller owns the supplied XML's schema conformance.
 
-Existing charts remain preserved XML on import; they are not converted into
-`ChartOptions`. New charts can join that same drawing alongside images without
-overwriting its parts or relationships. Both buffered writers and the streaming
-writer share chart package assembly. Office 2016 chart extensions and chart sheets
-are not part of the typed authoring API.
+Supported imported charts expose `ChartOptions` while retaining their original
+XML. Edits update the existing part and retain formatting outside the typed model.
+Unsupported charts remain preserved parts. New charts share the worksheet drawing
+with pictures and shapes. Both buffered and streaming writers use that assembly.
+
+`Workbook.addChartSheet(name, options, {width, height})` creates a chart-only tab.
+Standard charts support numeric date categories, date units, logarithmic value
+axes, trendlines, custom/fixed/percentage/statistical error bars, per-series labels
+and point colors. Stock series are ordered high/low/close or open/high/low/close.
+ChartEx adds hierarchy category levels, waterfall totals/connectors, histogram
+binning and box-and-whisker display options. Its axes support bounds and units;
+the chartEx schema has no date or logarithmic scaling.
+
+See [workbook fidelity](workbook-fidelity.md) for native drawing features,
+preserving editor imports, diagnostics, and interoperability checks.

@@ -18,7 +18,7 @@ import type {ErrorCode} from '../../core/value.ts';
 import {numInteger} from '../../xml/xml-attrs.ts';
 import {parseXml} from '../../xml/xml-read.ts';
 import {boolStrict, localName} from '../../xml/xml-scan.ts';
-import {XML_DECLARATION} from '../../xml/xml.ts';
+import {escapeText, XML_DECLARATION} from '../../xml/xml.ts';
 import {
   type CellMetadataIndex,
   DYNAMIC_ARRAY_TYPE,
@@ -147,6 +147,24 @@ export class WorkbookMetadataTable {
   // Each error a cell pointed at, in first-use order, with the `vm` its cells are written with: the n-th
   // is rich value n - 1 and value-metadata block n.
   readonly #errors = new Map<ErrorCode, number>();
+  readonly #values: (
+    | {kind: 'error'; error: ErrorCode}
+    | {kind: 'image'; imageId: number; alt: string}
+  )[] = [];
+
+  /** Allocate images in the same rich-value table as errors, so their vm indices never collide. */
+  markCellImage(imageId: number, alt = ''): number {
+    const found = this.#values.findIndex(
+      (value) => value.kind === 'image' && value.imageId === imageId && value.alt === alt,
+    );
+    if (found >= 0) return found + 1;
+    this.#values.push({kind: 'image', imageId, alt});
+    return this.#values.length;
+  }
+
+  get images(): readonly {imageId: number; alt: string}[] {
+    return this.#values.filter((value) => value.kind === 'image');
+  }
 
   /** The `cm` a dynamic-array formula's cell is written with. Every such cell shares the one block. */
   markDynamicArray(): number {
@@ -162,25 +180,26 @@ export class WorkbookMetadataTable {
     if (!RICH_VALUE_ERROR_TYPES.has(error)) return undefined;
     const known = this.#errors.get(error);
     if (known !== undefined) return known;
-    const vm = this.#errors.size + 1;
+    const vm = this.#values.length + 1;
+    this.#values.push({kind: 'error', error});
     this.#errors.set(error, vm);
     return vm;
   }
 
   /** Whether no cell points into the metadata part; the writer omits it entirely when so. */
   get isEmpty(): boolean {
-    return !this.#dynamicArrays && this.#errors.size === 0;
+    return !this.#dynamicArrays && this.#values.length === 0;
   }
 
   /** Whether a cell points at a rich value, so the rich-value parts are emitted beside the metadata. */
   get hasRichValues(): boolean {
-    return this.#errors.size > 0;
+    return this.#values.length > 0;
   }
 
   /** Serialise the `xl/metadata.xml` part, in the form Excel saves it. */
   toXml(): string {
     const dynamic = this.#dynamicArrays;
-    const errorCount = this.#errors.size;
+    const errorCount = this.#values.length;
     const types = [
       ...(dynamic
         ? [`<metadataType name="${DYNAMIC_ARRAY_TYPE}" ${METADATA_TYPE_FLAGS} cellMeta="1"/>`]
@@ -230,13 +249,25 @@ export class WorkbookMetadataTable {
    * out, each naming its `errorType` and the unknown sub-type, 0.
    */
   richValuesXml(): string {
-    const values = [...this.#errors.keys()].map(
-      (error) => `<rv s="0"><v>${RICH_VALUE_ERROR_TYPES.get(error)}</v><v>0</v></rv>`,
+    let imageIndex = 0;
+    const values = this.#values.map((value) =>
+      value.kind === 'error'
+        ? `<rv s="0"><v>${RICH_VALUE_ERROR_TYPES.get(value.error)}</v><v>0</v></rv>`
+        : `<rv s="1"><v>${imageIndex++}</v><v>5</v><v>${escapeText(value.alt)}</v></rv>`,
     );
     return (
       XML_DECLARATION +
       `<rvData xmlns="${RICH_DATA_NS}" count="${values.length}">${values.join('')}</rvData>`
     );
+  }
+
+  richValueStructuresXml(): string {
+    return this.images.length === 0
+      ? RICH_VALUE_STRUCTURES_XML
+      : RICH_VALUE_STRUCTURES_XML.replace('count="1"', 'count="2"').replace(
+          '</rvStructures>',
+          '<s t="_localImage"><k n="_rvRel:LocalImageIdentifier" t="i"/><k n="CalcOrigin" t="i"/><k n="Text" t="s"/></s></rvStructures>',
+        );
   }
 }
 

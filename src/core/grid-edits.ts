@@ -30,6 +30,7 @@ import type {MergeRect} from './merge.ts';
 import type {PageBreak} from './page-setup.ts';
 import {type ParsedPivotTable, type PivotTable, splicePivotSource} from './pivot-table.ts';
 import {positionalPlacements} from './row-input.ts';
+import {type SheetFeatureStorage, spliceSheetFeatures} from './sheet-features.ts';
 import type {Table} from './table.ts';
 import {
   type CellValue,
@@ -54,6 +55,7 @@ export interface AutoFilterSlot {
 // The sheet's mutable storage, shared by reference with Worksheet. Never reassigned, only mutated in
 // place, so the two views stay in sync through every splice.
 interface GridStorage {
+  readonly features: SheetFeatureStorage;
   readonly rows: Map<number, Map<number, Cell>>;
   readonly rowProperties: Map<number, RowProperties>;
   readonly columns: Map<number, ColumnProperties>;
@@ -80,6 +82,7 @@ interface GridStorage {
 }
 
 export class GridEdits {
+  readonly #features: SheetFeatureStorage;
   readonly #rows: Map<number, Map<number, Cell>>;
   readonly #rowProperties: Map<number, RowProperties>;
   readonly #columns: Map<number, ColumnProperties>;
@@ -100,6 +103,7 @@ export class GridEdits {
   readonly #formulaHost: () => ((edit: SheetSplice) => void) | undefined;
 
   constructor(storage: GridStorage) {
+    this.#features = storage.features;
     this.#rows = storage.rows;
     this.#rowProperties = storage.rowProperties;
     this.#columns = storage.columns;
@@ -233,6 +237,7 @@ export class GridEdits {
    */
   spliceFormulas(edit: SheetSplice): void {
     const home = this.#sheetName();
+    spliceSheetFeatures(this.#features, home, edit);
     replaceContents(
       this.#charts,
       this.#charts.map((chart) => spliceChart(chart, home, edit)),

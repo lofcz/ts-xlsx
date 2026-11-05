@@ -67,6 +67,7 @@ import {type Visibility, Worksheet, type WorksheetState} from './worksheet.ts';
  * linked workbook. A pivot or slicer cache has none.
  */
 export interface PreservedWorkbookReference {
+  readonly sourceRelationshipId?: string;
   readonly relType: string;
   readonly entryPath: string;
   readonly parts: readonly PreservedPart[];
@@ -259,6 +260,7 @@ export class Workbook {
   // caches), captured verbatim on read so a round-trip re-emits them rather than dropping the pivots
   // and slicers they back. Empty for a workbook authored from scratch.
   readonly #preservedReferences: PreservedWorkbookReference[] = [];
+  readonly #preservedXml: string[] = [];
 
   // Every row and column splice made to a sheet of this workbook, in order. A preserved part spells
   // references to the sheets in bytes the model does not read, so the writer replays these over it
@@ -836,6 +838,20 @@ export class Workbook {
     return sheet;
   }
 
+  /** Create a chart-only tab. Dimensions are pixels; its chart remains editable. */
+  addChartSheet(
+    name: string,
+    chart: import('./chart.ts').ChartOptions,
+    size: {width: number; height: number} = {width: 960, height: 600},
+  ): Worksheet {
+    const planned = new Worksheet(name, 0);
+    planned.addChart(chart, {tl: {col: 0, row: 0}, ext: size});
+    const sheet = this.addWorksheet(name);
+    sheet.kind = 'chartsheet';
+    sheet.addChart(chart, {tl: {col: 0, row: 0}, ext: size});
+    return sheet;
+  }
+
   // A splice of one sheet moves the references to it everywhere else a formula lives: every other sheet,
   // each defined name, and the preserved parts the writer replays the journal over. A sheet-scoped name reads an unqualified reference against its own sheet, as
   // a formula on that sheet does; a workbook-scoped one has no sheet of its own.
@@ -913,6 +929,13 @@ export class Workbook {
    * methods. Declared last so every private field it closes over is already in scope.
    */
   readonly [INTERNAL]: WorkbookInternals = {
+    preservedXml: this.#preservedXml,
+    restoreWorksheets: (sheets) => {
+      this.#worksheets.splice(0, Infinity, ...sheets);
+    },
+    restoreDefinedNames: (names) => {
+      this.#definedNames.splice(0, Infinity, ...names);
+    },
     addPreservedReference: (reference) => {
       this.#preservedReferences.push(reference);
     },
@@ -958,6 +981,9 @@ export class Workbook {
  * two files.
  */
 export interface WorkbookInternals {
+  readonly preservedXml: string[];
+  restoreWorksheets(sheets: readonly Worksheet[]): void;
+  restoreDefinedNames(names: readonly DefinedName[]): void;
   /** Record a workbook-level preserved reference (a pivot or slicer cache) read from a file. */
   addPreservedReference(reference: PreservedWorkbookReference): void;
 

@@ -92,6 +92,34 @@ function recordsFacet<K extends 'rowBreaks' | 'columnBreaks'>(key: K): ModelFace
  */
 export const WORKSHEET_MODEL_FACETS = [
   facet(
+    'sparklines',
+    (sheet) => [...sheet.sparklineGroups],
+    (sheet, value) => {
+      sheet[INTERNAL].sparklines.splice(0, Infinity, ...structuredClone(value));
+    },
+  ),
+  facet(
+    'checkboxes',
+    (sheet) => [...sheet.checkboxes],
+    (sheet, value) => {
+      sheet[INTERNAL].checkboxes.splice(0, Infinity, ...value);
+    },
+  ),
+  facet(
+    'shapes',
+    (sheet) => [...sheet.shapes],
+    (sheet, value) => {
+      sheet[INTERNAL].shapes.splice(0, Infinity, ...structuredClone(value));
+    },
+  ),
+  facet(
+    'kind',
+    (sheet) => sheet.kind,
+    (sheet, kind) => {
+      sheet.kind = kind;
+    },
+  ),
+  facet(
     'charts',
     (sheet) => [...sheet.charts],
     (sheet, charts) => sheet[INTERNAL].restoreCharts(charts),

@@ -142,6 +142,11 @@ export function closure(entry: string, imports: (file: string) => string[]): Set
  * the usual approximation: after an identifier, a number, a `)` or a `]` it divides, and otherwise it
  * opens one. `if (x) /re/.test(y)` is the shape that defeats it, and there is none in this tree.
  */
+/** Blank quoted string contents as well as comments; keep template expressions visible. */
+export function withoutCommentsOrQuotedStrings(source: string): string {
+  return blanked(source, true);
+}
+
 export function withoutComments(source: string): string {
   return blanked(source, false);
 }

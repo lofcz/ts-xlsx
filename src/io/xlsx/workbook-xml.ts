@@ -3,6 +3,7 @@
 // core/app property parts. The root and workbook `.rels` parts are the writer's relationship ledgers.
 
 import {formulaNamesInScope, mangleFormula, quoteSheetName} from '../../core/formula.ts';
+import {INTERNAL} from '../../core/internal.ts';
 import {WORKBOOK_PROTECTION_CREDENTIAL_ATTRS} from '../../core/workbook-protection.ts';
 import type {Workbook, WorkbookProperties} from '../../core/workbook.ts';
 import {isVisibility, type Worksheet} from '../../core/worksheet.ts';
@@ -46,6 +47,7 @@ import {
   WORKBOOK_PART,
   worksheetPart,
 } from './part-names.ts';
+import {restoreWorkbookXml} from './preserved-workbook-xml.ts';
 import {NS} from './relationships.ts';
 import {x14Ext} from './x14-ext.ts';
 
@@ -296,19 +298,26 @@ export function workbookXml(
       return `<sheet name="${escapeAttr(sheet.name)}" sheetId="${sheet.id}"${state} r:id="${relId}"/>`;
     })
     .join('');
-  return (
+  return restoreWorkbookXml(
     XML_DECLARATION +
-    `<workbook xmlns="${NS.main}" xmlns:r="${NS.docRels}">` +
-    workbookPrXml(workbook) +
-    workbookProtectionXml(workbook) +
-    bookViewsXml(workbook) +
-    `<sheets>${entries}</sheets>` +
-    externalReferencesXml(preservedRels) +
-    definedNamesXml(workbook) +
-    calcPrXml(workbook) +
-    pivotCachesXml(preservedRels, pivots) +
-    workbookExtLstXml(preservedRels) +
-    '</workbook>'
+      `<workbook xmlns="${NS.main}" xmlns:r="${NS.docRels}">` +
+      workbookPrXml(workbook) +
+      workbookProtectionXml(workbook) +
+      bookViewsXml(workbook) +
+      `<sheets>${entries}</sheets>` +
+      externalReferencesXml(preservedRels) +
+      definedNamesXml(workbook) +
+      calcPrXml(workbook) +
+      pivotCachesXml(preservedRels, pivots) +
+      workbookExtLstXml(preservedRels) +
+      '</workbook>',
+    workbook[INTERNAL].preservedXml,
+    new Map(
+      preservedRels.flatMap((ref, index) => {
+        const id = workbook.preservedReferences[index]?.sourceRelationshipId;
+        return id ? [[id, ref.relId]] : [];
+      }),
+    ),
   );
 }
 

@@ -123,6 +123,7 @@ linked workbook. A pivot or slicer cache has none.
 
 ```ts
 interface PreservedWorkbookReference {
+  readonly sourceRelationshipId?: string;
   readonly relType: string;
   readonly entryPath: string;
   readonly parts: readonly PreservedPart[];
@@ -184,6 +185,11 @@ class Workbook {
   get definedNames(): readonly DefinedName[];
   defineName(definedName: DefinedName): void;
   addWorksheet(name: string, options: AddWorksheetOptions = {}): Worksheet;
+  addChartSheet(
+    name: string,
+    chart: import('./chart.ts').ChartOptions,
+    size: {width: number; height: number} = {width: 960, height: 600},
+  ): Worksheet;
   getWorksheet(nameOrId: string | number): Worksheet | undefined;
   requireWorksheet(nameOrId: string | number): Worksheet;
 }
@@ -774,6 +780,18 @@ Create a worksheet and append it to the workbook.
 
 **Throws:** [`AuthoringError`](./errors.md#authoringerror) if the name is empty, too long, contains a forbidden character,
 or collides (case-insensitively) with an existing sheet.
+
+#### `Workbook.addChartSheet`
+
+```ts
+addChartSheet(
+    name: string,
+    chart: import('./chart.ts').ChartOptions,
+    size: {width: number; height: number} = {width: 960, height: 600},
+  ): Worksheet;
+```
+
+Create a chart-only tab. Dimensions are pixels; its chart remains editable.
 
 #### `Workbook.getWorksheet`
 

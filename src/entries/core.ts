@@ -295,6 +295,19 @@ export {
   type ChartRelatedPart,
   type WorksheetChart,
   isChartType,
+  type ChartSource,
+  type ChartTrendline,
+  type ChartErrorBars,
+  type ChartDataLabels,
+  isExtendedChart,
 } from '../core/chart.ts';
+export {resolveChartCaches, type ChartCacheDiagnostic} from '../core/chart-cache.ts';
 
 export type {SheetSplice} from '../core/formula-references.ts';
+export type {
+  CellImage,
+  SparklineGroup,
+  ShapeTextRun,
+  ShapeOptions,
+  WorksheetShape,
+} from '../core/sheet-features.ts';

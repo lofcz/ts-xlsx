@@ -25,3 +25,10 @@ export {
   parseThemeFontScheme,
 } from '../io/xlsx/theme-xml.ts';
 export {type WriteOptions, writeXlsx, writeXlsxAsync} from '../io/xlsx/write.ts';
+export {
+  mergeXlsxEdits,
+  type FidelityDiagnostic,
+  type WorkbookEditSheet,
+  type MergeXlsxEditsOptions,
+  type MergeXlsxEditsResult,
+} from '../io/xlsx/merge-edits.ts';

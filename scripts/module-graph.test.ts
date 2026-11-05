@@ -11,7 +11,13 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 
-import {relativeSpecifiers, resolveSpecifier, specifiers, withoutComments} from './module-graph.ts';
+import {
+  relativeSpecifiers,
+  resolveSpecifier,
+  specifiers,
+  withoutComments,
+  withoutCommentsOrQuotedStrings,
+} from './module-graph.ts';
 
 test('a commented-out import is not an import', () => {
   assert.deepEqual(specifiers("// import {x} from './gone.ts';\nimport {y} from './here.ts';"), [
@@ -110,4 +116,12 @@ test('a specifier resolves against its importer, in the spelling the graph uses'
   assert.equal(resolveSpecifier(from, './write.ts'), 'C:/repo/src/io/xlsx/write.ts');
   assert.equal(resolveSpecifier(from, '../opc/read-opc.ts'), 'C:/repo/src/io/opc/read-opc.ts');
   assert.equal(resolveSpecifier('C:\\repo\\src\\a.ts', './b.ts'), 'C:/repo/src/b.ts');
+});
+
+test('the browser boundary ignores XML string literals but still sees global reads in template expressions', () => {
+  assert.doesNotMatch(withoutCommentsOrQuotedStrings('const xml = "<global/>";'), /global/);
+  assert.match(
+    withoutCommentsOrQuotedStrings('const xml = `<root>${global.value}</root>`;'),
+    /global/,
+  );
 });

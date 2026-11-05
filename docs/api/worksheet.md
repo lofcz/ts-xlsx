@@ -171,7 +171,8 @@ type Visibility = 'visible' | 'hidden' | 'veryHidden';
 
 ```ts
 class Worksheet {
-  readonly name: string;
+  kind: 'worksheet' | 'chartsheet' = 'worksheet';
+  get name(): string;
   readonly id: number;
   state: WorksheetState['state'];
   tabColor: Color | undefined;
@@ -227,6 +228,20 @@ class Worksheet {
   addChart(options: ChartOptions, anchor: PixelAnchor): void;
   addChartPart(part: ChartPart, anchor: ImageAnchor): void;
   get charts(): readonly WorksheetChart[];
+  addCellImage(imageId: number, ref: string, alt?: string): void;
+  get cellImages(): readonly import('./sheet-features.ts').CellImage[];
+  removeCellImage(ref: string): void;
+  addCheckbox(ref: string, checked?: boolean): void;
+  get checkboxes(): readonly string[];
+  removeCheckbox(ref: string): void;
+  addSparklineGroup(group: import('./sheet-features.ts').SparklineGroup): void;
+  get sparklineGroups(): readonly import('./sheet-features.ts').SparklineGroup[];
+  removeSparklineGroup(index: number): void;
+  addShape(options: import('./sheet-features.ts').ShapeOptions, anchor: PixelAnchor): void;
+  addDrawingXml(xml: string): void;
+  get shapes(): readonly import('./sheet-features.ts').WorksheetShape[];
+  removeShape(index: number): void;
+  updateChart(index: number, patch: Partial<ChartOptions>): void;
   removeChart(index: number): void;
   addBackgroundImage(imageId: number): void;
   removeBackgroundImage(): void;
@@ -266,6 +281,14 @@ class Worksheet {
 ```
 
 **Members**
+
+#### `Worksheet.kind`
+
+```ts
+kind: 'worksheet' | 'chartsheet' = 'worksheet';
+```
+
+A chart sheet owns one full-page chart and has no cell grid.
 
 #### `Worksheet.id`
 
@@ -743,7 +766,63 @@ Register a complete standard chart part; anchor coordinates and offsets are in c
 get charts(): readonly WorksheetChart[];
 ```
 
-Authored charts as independent snapshots, in drawing order. Loaded charts remain preserved parts.
+Editable charts as independent snapshots, in drawing order.
+
+#### `Worksheet.addCellImage`
+
+```ts
+addCellImage(imageId: number, ref: string, alt?: string): void;
+```
+
+Place a registered workbook image in a cell, replacing any prior in-cell image there.
+
+#### `Worksheet.removeCellImage`
+
+```ts
+removeCellImage(ref: string): void;
+```
+
+Remove an in-cell image and clear its error placeholder.
+
+#### `Worksheet.addCheckbox`
+
+```ts
+addCheckbox(ref: string, checked?: boolean): void;
+```
+
+Add checkbox formatting without coercing existing non-Boolean values.
+
+#### `Worksheet.addSparklineGroup`
+
+```ts
+addSparklineGroup(group: import('./sheet-features.ts').SparklineGroup): void;
+```
+
+Register a sparkline group. The source formula may reference another sheet.
+
+#### `Worksheet.addShape`
+
+```ts
+addShape(options: import('./sheet-features.ts').ShapeOptions, anchor: PixelAnchor): void;
+```
+
+Author a DrawingML shape or text box with the same placement rules as pictures.
+
+#### `Worksheet.addDrawingXml`
+
+```ts
+addDrawingXml(xml: string): void;
+```
+
+Register complete DrawingML shape anchors. The writer allocates all drawing object ids.
+
+#### `Worksheet.updateChart`
+
+```ts
+updateChart(index: number, patch: Partial<ChartOptions>): void;
+```
+
+Change an authored or imported chart while preserving unmodeled imported formatting.
 
 #### `Worksheet.removeChart`
 
@@ -1204,6 +1283,10 @@ nor clears them.
 
 ```ts
 interface WorksheetModel {
+  sparklines: import('./sheet-features.ts').SparklineGroup[];
+  checkboxes: string[];
+  shapes: import('./sheet-features.ts').WorksheetShape[];
+  kind: 'worksheet' | 'chartsheet';
   state: WorksheetState['state'];
   tabColor: Color | undefined;
   properties: WorksheetProperties;

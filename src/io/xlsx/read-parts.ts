@@ -249,11 +249,18 @@ export function readSheetPreservedReferences(
     element: PreservedWorksheetReference['element'],
     relType: string,
     target: string,
+    sourceRelationshipId?: string,
   ): void => {
     const entryPath = sheetRels.pathOf(target);
     const parts = capturePreservedClosure(context, entryPath);
     if (parts !== undefined)
-      sheet[INTERNAL].addPreservedReference({element, relType, entryPath, parts});
+      sheet[INTERNAL].addPreservedReference({
+        element,
+        relType,
+        entryPath,
+        parts,
+        ...(sourceRelationshipId ? {sourceRelationshipId} : {}),
+      });
   };
 
   // Element-wired references: a `<drawing>`/`<legacyDrawingHF>` names its part by an `r:id` in the
@@ -265,7 +272,8 @@ export function readSheetPreservedReferences(
   for (const element of referenceElements) {
     const relId = referenceRelIds[element];
     const record = relId === undefined ? undefined : sheetRels.byId(relId);
-    if (record !== undefined && !record.external) capture(element, record.type, record.target);
+    if (record !== undefined && !record.external)
+      capture(element, record.type, record.target, record.id);
   }
 
   // Relationship-wired references: a pivot table or slicer is reached through a sheet relationship
@@ -273,7 +281,8 @@ export function readSheetPreservedReferences(
   // each so the pivots/slicers a fill-and-save workflow does not touch are not dropped.
   for (const record of sheetRels.records) {
     if (record.external) continue;
-    if (isPreservedSheetRelType(record.type)) capture(undefined, record.type, record.target);
+    if (isPreservedSheetRelType(record.type))
+      capture(undefined, record.type, record.target, record.id);
   }
 }
 
@@ -282,7 +291,18 @@ export function readSheetPreservedReferences(
 // image, the comment VML) is modeled and re-serialised from the model, so preserving it here would emit
 // the part twice.
 function isPreservedSheetRelType(type: string): boolean {
-  return isAnyRelType(type, 'pivotTable', 'slicer');
+  return !isAnyRelType(
+    type,
+    'drawing',
+    'legacyDrawing',
+    'vmlDrawing',
+    'printerSettings',
+    'table',
+    'comments',
+    'threadedComment',
+    'hyperlink',
+    'image',
+  );
 }
 
 // Capture the workbook-level references to package content the model does not interpret: pivot
@@ -299,13 +319,19 @@ export function readWorkbookPreservedReferences(
   const {workbook} = context;
   const {cacheIdByRelId, externalIndexByRelId} = registrations;
   for (const record of workbookRels.records) {
-    if (record.external || !isPreservedWorkbookRelType(record.type)) continue;
+    if (
+      record.external ||
+      registrations.sheetRelIds?.has(record.id) ||
+      !isPreservedWorkbookRelType(record.type)
+    )
+      continue;
     const entryPath = workbookRels.pathOf(record.target);
     const parts = capturePreservedClosure(context, entryPath);
     if (parts === undefined) continue;
     const cacheId = cacheIdByRelId.get(record.id);
     const externalReferenceIndex = externalIndexByRelId.get(record.id);
     workbook[INTERNAL].addPreservedReference({
+      sourceRelationshipId: record.id,
       relType: record.type,
       entryPath,
       parts,
@@ -351,12 +377,27 @@ function isRegeneratedRootRelType(type: string): boolean {
 // external reference from dangling: the link part and its `<externalReferences>` registration are both
 // re-emitted.
 function isPreservedWorkbookRelType(type: string): boolean {
-  return isAnyRelType(type, 'pivotCacheDefinition', 'slicerCache', 'vbaProject', 'externalLink');
+  return !isAnyRelType(
+    type,
+    'worksheet',
+    'chartsheet',
+    'styles',
+    'theme',
+    'sharedStrings',
+    'person',
+    'sheetMetadata',
+    'rdRichValue',
+    'rdRichValueStructure',
+    'rdRichValueTypes',
+    'richValueRel',
+    'FeaturePropertyBag',
+  );
 }
 
 /** The two `<pivotCaches>`/`<externalReferences>` registries a preserved reference is wired by,
  * gathered from the workbook part's own scan rather than from two more of it. */
 export interface WorkbookRegistrations {
+  readonly sheetRelIds?: ReadonlySet<string>;
   readonly cacheIdByRelId: ReadonlyMap<string, string>;
   readonly externalIndexByRelId: ReadonlyMap<string, number>;
 }

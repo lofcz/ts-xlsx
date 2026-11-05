@@ -18,6 +18,7 @@ import {comments} from './ts-xlsx/comments.ts';
 import {conditionalFormatting} from './ts-xlsx/conditional-formatting.ts';
 import {core} from './ts-xlsx/core.ts';
 import {csv} from './ts-xlsx/csv.ts';
+import {fidelity} from './ts-xlsx/fidelity.ts';
 import {formulas} from './ts-xlsx/formulas.ts';
 import {grid} from './ts-xlsx/grid.ts';
 import {hyperlinks} from './ts-xlsx/hyperlinks.ts';
@@ -36,6 +37,7 @@ const impl = {
   ...conditionalFormatting,
   ...core,
   ...csv,
+  ...fidelity,
   ...formulas,
   ...grid,
   ...hyperlinks,

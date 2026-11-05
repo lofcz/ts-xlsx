@@ -207,6 +207,10 @@ export interface CellModel extends CellContent {
  * nor clears them.
  */
 export interface WorksheetModel {
+  sparklines: import('./sheet-features.ts').SparklineGroup[];
+  checkboxes: string[];
+  shapes: import('./sheet-features.ts').WorksheetShape[];
+  kind: 'worksheet' | 'chartsheet';
   state: WorksheetState['state'];
   tabColor: Color | undefined;
   properties: WorksheetProperties;
@@ -232,7 +236,12 @@ export interface WorksheetModel {
 }
 
 export class Worksheet {
-  readonly name: string;
+  /** A chart sheet owns one full-page chart and has no cell grid. */
+  kind: 'worksheet' | 'chartsheet' = 'worksheet';
+  #name: string;
+  get name(): string {
+    return this.#name;
+  }
   /** 1-based workbook-assigned id, stable for the sheet's lifetime. */
   readonly id: number;
   state: WorksheetState['state'];
@@ -318,6 +327,13 @@ export class Worksheet {
   // Tables and authored pivot tables are sheet-level overlays on the grid, not cell storage.
   readonly #tables: Table[] = [];
   readonly #charts: WorksheetChart[] = [];
+  readonly #removedChartIds: string[] = [];
+  readonly #cellImages: import('./sheet-features.ts').CellImage[] = [];
+  readonly #sparklines: import('./sheet-features.ts').SparklineGroup[] = [];
+  readonly #checkboxes: string[] = [];
+  readonly #shapes: import('./sheet-features.ts').WorksheetShape[] = [];
+  readonly #removedShapeIds: string[] = [];
+  readonly #preservedXml: string[] = [];
   readonly #pivotTables: PivotTable[] = [];
   // Pivot tables reconstructed from a loaded package (see io/xlsx/read-pivot.ts): a read-only,
   // inspection-only view distinct from #pivotTables. A loaded pivot round-trips by byte-preservation
@@ -371,7 +387,7 @@ export class Worksheet {
   readonly #extent: UsedExtent;
 
   constructor(name: string, id: number, state: WorksheetState['state'] = 'visible') {
-    this.name = name;
+    this.#name = name;
     this.id = id;
     this.state = state;
     this.#extent = new UsedExtent({
@@ -381,6 +397,12 @@ export class Worksheet {
       mergeRects: this.#merges.rects,
     });
     this.#edits = new GridEdits({
+      features: {
+        cellImages: this.#cellImages,
+        checkboxes: this.#checkboxes,
+        sparklines: this.#sparklines,
+        shapes: this.#shapes,
+      },
       rows: this.#rows,
       rowProperties: this.#rowProperties,
       columns: this.#columns,
@@ -774,15 +796,120 @@ export class Worksheet {
     this.#charts.push(structuredClone({kind: 'xml', part, anchor}));
   }
 
-  /** Authored charts as independent snapshots, in drawing order. Loaded charts remain preserved parts. */
+  /** Editable charts as independent snapshots, in drawing order. */
   get charts(): readonly WorksheetChart[] {
     return structuredClone(this.#charts);
+  }
+
+  /** Place a registered workbook image in a cell, replacing any prior in-cell image there. */
+  addCellImage(imageId: number, ref: string, alt?: string): void {
+    const cell = this.getCell(ref);
+    cell.value = {error: '#VALUE!'};
+    const item = {imageId, ref: cell.address, ...(alt === undefined ? {} : {alt})};
+    const index = this.#cellImages.findIndex((image) => image.ref === cell.address);
+    if (index < 0) this.#cellImages.push(item);
+    else this.#cellImages[index] = item;
+  }
+
+  get cellImages(): readonly import('./sheet-features.ts').CellImage[] {
+    return structuredClone(this.#cellImages);
+  }
+
+  /** Remove an in-cell image and clear its error placeholder. */
+  removeCellImage(ref: string): void {
+    const cell = this.getCell(ref),
+      index = this.#cellImages.findIndex((image) => image.ref === cell.address);
+    if (index >= 0) {
+      this.#cellImages.splice(index, 1);
+      cell.value = null;
+    }
+  }
+
+  /** Add checkbox formatting without coercing existing non-Boolean values. */
+  addCheckbox(ref: string, checked?: boolean): void {
+    const cell = this.getCell(ref);
+    if (checked !== undefined) cell.value = checked;
+    else if (cell.value === null) cell.value = false;
+    if (!this.#checkboxes.includes(cell.address)) this.#checkboxes.push(cell.address);
+  }
+
+  get checkboxes(): readonly string[] {
+    return [...this.#checkboxes];
+  }
+
+  removeCheckbox(ref: string): void {
+    const address = this.getCell(ref).address,
+      index = this.#checkboxes.indexOf(address);
+    if (index >= 0) this.#checkboxes.splice(index, 1);
+  }
+
+  /** Register a sparkline group. The source formula may reference another sheet. */
+  addSparklineGroup(group: import('./sheet-features.ts').SparklineGroup): void {
+    if (group.sparklines.length === 0)
+      throw new AuthoringError('a sparkline group needs at least one sparkline');
+    for (const item of group.sparklines) {
+      this.getCell(item.ref);
+      if (!item.formula) throw new AuthoringError('sparkline source formula cannot be empty');
+    }
+    for (const value of [group.lineWeight, group.manualMin, group.manualMax])
+      if (value !== undefined && !Number.isFinite(value))
+        throw new AuthoringError('sparkline values must be finite');
+    this.#sparklines.push(structuredClone(group));
+  }
+
+  get sparklineGroups(): readonly import('./sheet-features.ts').SparklineGroup[] {
+    return structuredClone(this.#sparklines);
+  }
+
+  removeSparklineGroup(index: number): void {
+    if (!Number.isInteger(index) || index < 0 || index >= this.#sparklines.length)
+      throw new RangeError('sparkline group index is outside this worksheet');
+    this.#sparklines.splice(index, 1);
+  }
+
+  /** Author a DrawingML shape or text box with the same placement rules as pictures. */
+  addShape(options: import('./sheet-features.ts').ShapeOptions, anchor: PixelAnchor): void {
+    const resolved = resolvePixelAnchor(anchor, {
+      columnWidth: (col) => this.#columns.get(col + 1)?.width ?? this.properties.defaultColWidth,
+      rowHeight: (row) =>
+        this.#rowProperties.get(row + 1)?.height ?? this.properties.defaultRowHeight,
+    });
+    this.#shapes.push(structuredClone({kind: 'shape', options, anchor: resolved}));
+  }
+
+  /** Register complete DrawingML shape anchors. The writer allocates all drawing object ids. */
+  addDrawingXml(xml: string): void {
+    this.#shapes.push({kind: 'xml', xml});
+  }
+
+  get shapes(): readonly import('./sheet-features.ts').WorksheetShape[] {
+    return structuredClone(this.#shapes);
+  }
+
+  removeShape(index: number): void {
+    if (!Number.isInteger(index) || index < 0 || index >= this.#shapes.length)
+      throw new RangeError('shape index is outside this worksheet');
+    const shape = this.#shapes[index];
+    if (shape?.kind === 'xml' && shape.sourceId) this.#removedShapeIds.push(shape.sourceId);
+    this.#shapes.splice(index, 1);
+  }
+
+  /** Change an authored or imported chart while preserving unmodeled imported formatting. */
+  updateChart(index: number, patch: Partial<ChartOptions>): void {
+    const chart = this.#charts[index];
+    if (!chart || chart.kind !== 'chart') throw new RangeError('chart is not editable');
+    const options = {...chart.options, ...patch};
+    validateChart(options);
+    this.#charts[index] = structuredClone({...chart, options});
   }
 
   /** Remove an authored chart by its zero-based position. */
   removeChart(index: number): void {
     if (!Number.isInteger(index) || index < 0 || index >= this.#charts.length)
       throw new RangeError('chart index is outside this worksheet');
+    const chart = this.#charts[index];
+    if (chart?.kind === 'chart' && chart.source?.relationshipId)
+      this.#removedChartIds.push(chart.source.relationshipId);
     this.#charts.splice(index, 1);
   }
 
@@ -1344,8 +1471,44 @@ export class Worksheet {
   set model(model: WorksheetModel) {
     const rehearsal = new Worksheet(this.name, this.id);
     for (const facet of WORKSHEET_MODEL_FACETS) facet.write(rehearsal, model);
+    const known = new Map(
+      this.#charts.flatMap((chart) =>
+        chart.kind === 'chart' && chart.source?.relationshipId
+          ? [[chart.source.relationshipId, chart.source.xml] as const]
+          : [],
+      ),
+    );
+    for (const chart of this.#charts) {
+      if (
+        chart.kind === 'chart' &&
+        chart.source?.relationshipId &&
+        !model.charts.some(
+          (next) =>
+            next.kind === 'chart' && next.source?.relationshipId === chart.source?.relationshipId,
+        )
+      )
+        this.#removedChartIds.push(chart.source.relationshipId);
+    }
+    for (const shape of this.#shapes) {
+      if (
+        shape.kind === 'xml' &&
+        shape.sourceId &&
+        !model.shapes.some((next) => next.kind === 'xml' && next.sourceId === shape.sourceId)
+      )
+        this.#removedShapeIds.push(shape.sourceId);
+    }
+    const charts = model.charts.map((chart) => {
+      if (
+        chart.kind !== 'chart' ||
+        !chart.source?.relationshipId ||
+        known.get(chart.source.relationshipId) === chart.source.xml
+      )
+        return chart;
+      const {relationshipId: _relationshipId, ...source} = chart.source;
+      return {...chart, source};
+    });
     this.#resetContent();
-    for (const facet of WORKSHEET_MODEL_FACETS) facet.write(this, model);
+    for (const facet of WORKSHEET_MODEL_FACETS) facet.write(this, {...model, charts});
   }
 
   /**
@@ -1398,6 +1561,19 @@ export class Worksheet {
    * methods. Declared last so every private field it closes over is already in scope.
    */
   readonly [INTERNAL]: WorksheetInternals = {
+    rename: (name) => {
+      this.#name = name;
+    },
+    preservedXml: this.#preservedXml,
+    replacePreservedReferences: (references) => {
+      this.#preservedReferences.splice(0, Infinity, ...references);
+    },
+    cellImages: this.#cellImages,
+    sparklines: this.#sparklines,
+    checkboxes: this.#checkboxes,
+    shapes: this.#shapes,
+    removedShapeIds: this.#removedShapeIds,
+    removedChartIds: this.#removedChartIds,
     evictRow: (number) => {
       this.#rows.delete(number);
       this.#rowProperties.delete(number);
@@ -1529,6 +1705,16 @@ function assertSpliceFits(axis: 'row' | 'column', start: number, insertCount: nu
  * `core/internal.ts`.
  */
 export interface WorksheetInternals {
+  rename(name: string): void;
+  readonly preservedXml: string[];
+  replacePreservedReferences(references: readonly PreservedWorksheetReference[]): void;
+  readonly cellImages: import('./sheet-features.ts').CellImage[];
+  readonly sparklines: import('./sheet-features.ts').SparklineGroup[];
+  readonly checkboxes: string[];
+  readonly shapes: import('./sheet-features.ts').WorksheetShape[];
+  readonly removedShapeIds: string[];
+  /** Imported chart relationships explicitly removed by their owner. */
+  readonly removedChartIds: readonly string[];
   restoreCharts(charts: readonly WorksheetChart[]): void;
   /**
    * Drop a row's materialised cells and format properties, releasing its cell graph. The streaming
