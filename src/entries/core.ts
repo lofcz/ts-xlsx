@@ -1,4 +1,4 @@
-// Entry barrel for `@shbernal/ts-xlsx/core`: the document model, with no serialisation attached.
+// Entry barrel for `@lofcz/ts-xlsx/core`: the document model, with no serialisation attached.
 //
 // This is what a consumer imports to build or inspect a workbook in memory: the classes, the
 // property shapes, and the value vocabulary. It pulls in no ZIP, no XML writer and no BIFF12
@@ -284,3 +284,17 @@ export {
   type WorksheetProperties,
   type WorksheetState,
 } from '../core/worksheet.ts';
+
+export {
+  type ChartType,
+  type ChartData,
+  type ChartSeries,
+  type ChartAxis,
+  type ChartOptions,
+  type ChartPart,
+  type ChartRelatedPart,
+  type WorksheetChart,
+  isChartType,
+} from '../core/chart.ts';
+
+export type {SheetSplice} from '../core/formula-references.ts';

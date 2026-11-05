@@ -5,7 +5,7 @@ A cell's appearance is six independent facets: `font`, `fill`, `border`, `alignm
 absent facet reads as `undefined` rather than as an empty placeholder object.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Report');
 const cell = sheet.getCell('A1');
@@ -30,7 +30,7 @@ style applies to cells the column does not otherwise have, while a range style i
 onto each cell.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Report');
 sheet.addRow(['Region', 'Revenue']);
@@ -55,7 +55,7 @@ normalised, and not validated, which is the only behaviour that lets an author u
 this library has never heard of.
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const accounting = '_("$"* #,##0.00_);_("$"* (#,##0.00);_("$"* "-"??_);_(@_)';
 
@@ -86,7 +86,7 @@ shows the same distinction on screen.
 ## Rich text, when one cell holds two fonts
 
 ```ts
-import {readXlsx, richTextToPlain, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, richTextToPlain, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 source.addWorksheet('Note').getCell('A1').value = {
@@ -112,7 +112,7 @@ rather than by value. Reading a file keeps the theme it came with, and `resolveC
 a theme reference into the ARGB it currently means.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 console.log(workbook.defaultFont.name !== undefined); // true

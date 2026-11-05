@@ -31,7 +31,7 @@ const check = (held: boolean, problem: string): void => {
   if (!held) problems.push(`  ${problem}`);
 };
 
-const {readXlsx, Workbook, writeXlsx} = await import('@shbernal/ts-xlsx');
+const {readXlsx, Workbook, writeXlsx} = await import('@lofcz/ts-xlsx');
 
 const wb = new Workbook();
 const ws = wb.addWorksheet('Smoke');
@@ -59,7 +59,7 @@ const SUBPATH_BINDINGS: Readonly<Record<string, string>> = {
 };
 
 for (const [subpath, binding] of Object.entries(SUBPATH_BINDINGS)) {
-  const specifier = `@shbernal/ts-xlsx/${subpath}`;
+  const specifier = `@lofcz/ts-xlsx/${subpath}`;
   const module = (await import(specifier)) as Record<string, unknown>;
   check(binding in module, `${specifier} does not export ${binding}`);
 }

@@ -1,4 +1,4 @@
-// Entry barrel for `@shbernal/ts-xlsx/node`: the part of the library that only Node can run.
+// Entry barrel for `@lofcz/ts-xlsx/node`: the part of the library that only Node can run.
 //
 // One thing lives here today, the streaming writer, and it is here for what it imports rather than
 // for what it does. It opens a file (`node:fs`) and hands back a `PassThrough` to pipe

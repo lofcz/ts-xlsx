@@ -1,11 +1,10 @@
+import {AuthoringError} from '../errors.ts';
 // A worksheet: a sparsely-populated grid of cells addressed by A1 reference.
 //
 // Storage is sparse by construction: a spreadsheet is mostly empty, so cells
 // materialise on first access and only occupied positions cost memory. Column and
 // row metadata (widths, heights, visibility, outline grouping) are stored apart from
 // the cell grid, because a column or row can carry formatting while holding no cells.
-
-import {AuthoringError} from '../errors.ts';
 import {tokenSet} from '../token-set.ts';
 import {
   assertAxisInBounds,
@@ -25,6 +24,7 @@ import {
 } from './array-formula-ranges.ts';
 import {type AutoFilter, canonicalizeAutoFilter} from './autofilter.ts';
 import {applyCellStyle, Cell, copyCellContent} from './cell.ts';
+import {type ChartOptions, type ChartPart, type WorksheetChart, validateChart} from './chart.ts';
 import {Column} from './column.ts';
 import type {CommentThread} from './comment-thread.ts';
 import {ConditionalFormattingOverlay} from './conditional-formatting-overlay.ts';
@@ -67,7 +67,7 @@ import {
 import {WorksheetComments} from './worksheet-comments.ts';
 import {WorksheetMerges} from './worksheet-merges.ts';
 import {WORKSHEET_MODEL_FACETS} from './worksheet-model.ts';
-import {type PixelAnchor, WorksheetPictures} from './worksheet-pictures.ts';
+import {type PixelAnchor, WorksheetPictures, resolvePixelAnchor} from './worksheet-pictures.ts';
 
 /**
  * Whether a thing Excel can hide is showing: a sheet's tab, or the document window itself.
@@ -226,6 +226,7 @@ export interface WorksheetModel {
   dataValidations: DataValidationEntry[];
   conditionalFormattings: ConditionalFormatting[];
   tables: TableOptions[];
+  charts: WorksheetChart[];
   autoFilter: AutoFilter | undefined;
   protection: SheetProtection | undefined;
 }
@@ -316,6 +317,7 @@ export class Worksheet {
   readonly #rowProperties = new Map<number, RowProperties>();
   // Tables and authored pivot tables are sheet-level overlays on the grid, not cell storage.
   readonly #tables: Table[] = [];
+  readonly #charts: WorksheetChart[] = [];
   readonly #pivotTables: PivotTable[] = [];
   // Pivot tables reconstructed from a loaded package (see io/xlsx/read-pivot.ts): a read-only,
   // inspection-only view distinct from #pivotTables. A loaded pivot round-trips by byte-preservation
@@ -387,6 +389,7 @@ export class Worksheet {
       pivotTables: this.#pivotTables,
       loadedPivotTables: this.#loadedPivotTables,
       images: this.#images.anchors,
+      charts: this.#charts,
       dataValidations: this.#dataValidations,
       conditionalFormattings: this.#conditionalFormattings,
       hyperlinks: this.#hyperlinks,
@@ -753,6 +756,34 @@ export class Worksheet {
   /** The images anchored to this sheet, in the order they were added. */
   get images(): readonly AnchoredImage[] {
     return this.#images.anchors;
+  }
+
+  /** Author an editable chart, anchored like a picture in fractional cells and pixels. */
+  addChart(options: ChartOptions, anchor: PixelAnchor): void {
+    validateChart(options);
+    const resolved = resolvePixelAnchor(anchor, {
+      columnWidth: (col) => this.#columns.get(col + 1)?.width ?? this.properties.defaultColWidth,
+      rowHeight: (row) =>
+        this.#rowProperties.get(row + 1)?.height ?? this.properties.defaultRowHeight,
+    });
+    this.#charts.push(structuredClone({kind: 'chart', options, anchor: resolved}));
+  }
+
+  /** Register a complete standard chart part; anchor coordinates and offsets are in cells/EMUs. */
+  addChartPart(part: ChartPart, anchor: ImageAnchor): void {
+    this.#charts.push(structuredClone({kind: 'xml', part, anchor}));
+  }
+
+  /** Authored charts as independent snapshots, in drawing order. Loaded charts remain preserved parts. */
+  get charts(): readonly WorksheetChart[] {
+    return structuredClone(this.#charts);
+  }
+
+  /** Remove an authored chart by its zero-based position. */
+  removeChart(index: number): void {
+    if (!Number.isInteger(index) || index < 0 || index >= this.#charts.length)
+      throw new RangeError('chart index is outside this worksheet');
+    this.#charts.splice(index, 1);
   }
 
   /** Set this sheet's background image to a workbook image (the id {@link Workbook.addImage} returned).
@@ -1296,6 +1327,7 @@ export class Worksheet {
     this.#conditionalFormattings.clear();
     this.#hyperlinks.clear();
     this.#tables.length = 0;
+    this.#charts.length = 0;
     this.#extent.reset();
   }
 
@@ -1385,6 +1417,9 @@ export class Worksheet {
     },
     spliceFormulas: (edit) => {
       this.#edits.spliceFormulas(edit);
+    },
+    restoreCharts: (charts) => {
+      this.#charts.splice(0, this.#charts.length, ...structuredClone(charts));
     },
     restoreProtection: (protection) => {
       this.#protection = protection;
@@ -1494,6 +1529,7 @@ function assertSpliceFits(axis: 'row' | 'column', start: number, insertCount: nu
  * `core/internal.ts`.
  */
 export interface WorksheetInternals {
+  restoreCharts(charts: readonly WorksheetChart[]): void;
   /**
    * Drop a row's materialised cells and format properties, releasing its cell graph. The streaming
    * writer calls this the moment a row is serialised so peak memory stays bounded to the rows still

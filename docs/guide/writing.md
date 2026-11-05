@@ -4,7 +4,7 @@ Build a `Workbook`, then hand it to `writeXlsx`. The call is synchronous and ret
 package as a `Uint8Array`; nothing is written to disk unless you write it.
 
 ```ts
-import {Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 const sheet = workbook.addWorksheet('Orders');
@@ -22,7 +22,7 @@ console.log(bytes.length > 0); // true
 There are three ways in, and they are the same underneath.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Sheet1');
 
@@ -42,7 +42,7 @@ console.log(sheet.getCell('A2').value); // 'Ada'
 the columns keys first:
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('People');
 sheet.getColumn(1).key = 'name';
@@ -60,7 +60,7 @@ console.log(sheet.getCell('A2').value); // 'Grace'
 the value you assign decides what the cell is.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Kinds');
 
@@ -82,7 +82,7 @@ A hyperlink is not one of those kinds. It sits on the sheet, over one cell or a 
 beneath it keep whatever values they hold, so a total or a date can carry a link as readily as a label:
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Links');
 
@@ -101,7 +101,7 @@ calculates opens the file. If you would rather ask every consumer to recalculate
 the workbook:
 
 ```ts
-import {Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 const sheet = workbook.addWorksheet('Totals');
@@ -116,7 +116,7 @@ console.log(writeXlsx(workbook).length > 0); // true
 ## Several sheets, and document metadata
 
 ```ts
-import {Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 workbook.properties.title = 'Q1 report';
@@ -133,7 +133,7 @@ A name can be attached to a range, which is what Excel's Name Manager shows and 
 formula elsewhere can refer to:
 
 ```ts
-import {Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 const sheet = workbook.addWorksheet('Rates');
@@ -152,7 +152,7 @@ changes only when something about it changed, which is what makes one reviewable
 and cacheable by content.
 
 ```ts
-import {Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const build = () => {
   const workbook = new Workbook();
@@ -172,7 +172,7 @@ workbook is seconds during which a server answers nothing. `writeXlsxAsync` prod
 same package with the compression handed to worker threads.
 
 ```ts
-import {Workbook, writeXlsxAsync} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsxAsync} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 const sheet = workbook.addWorksheet('Big');

@@ -10,7 +10,7 @@
 //
 // `docs/knowledge/specs/browser-safe-io-boundary.md` asks for the opposite arrangement, and ADR
 // 0038 records how it is built: everything reachable from the root specifier is environment-neutral,
-// and the one Node-only face lives behind `@shbernal/ts-xlsx/node`, which a browser condition
+// and the one Node-only face lives behind `@lofcz/ts-xlsx/node`, which a browser condition
 // resolves to a module that throws by name. That arrangement is one careless import away from
 // being untrue again, and the import in question would typecheck, pass every test, and look
 // entirely reasonable where it sits. This is the mechanism that says so instead.

@@ -6,7 +6,7 @@ descends from `XlsxError`, and every one of those carries a `code` saying which 
 failure it was.
 
 ```ts
-import {readXlsx, XlsxError} from '@shbernal/ts-xlsx';
+import {readXlsx, XlsxError} from '@lofcz/ts-xlsx';
 
 try {
   readXlsx(new Uint8Array([1, 2, 3, 4]));
@@ -35,7 +35,7 @@ Every subclass fixes `code` to a literal, so the hierarchy is a discriminated un
 narrowing on `error.code` narrows the type.
 
 ```ts
-import {readXlsx, XlsxError} from '@shbernal/ts-xlsx';
+import {readXlsx, XlsxError} from '@lofcz/ts-xlsx';
 
 function classify(bytes: Uint8Array): string {
   try {
@@ -67,7 +67,7 @@ says it is the right kind and cannot be unpacked. Keeping them apart is what let
 never have to match on a message.
 
 ```ts
-import {readXlsx, UnsupportedFormatError} from '@shbernal/ts-xlsx';
+import {readXlsx, UnsupportedFormatError} from '@lofcz/ts-xlsx';
 
 // The magic bytes of a legacy OLE2 .xls.
 const legacy = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0, 0, 0]);
@@ -91,7 +91,7 @@ sees, so no lower-layer string can leak into a log or a user-facing error.
 worksheets, a table whose columns do not span its range, a merge overlapping another.
 
 ```ts
-import {AuthoringError, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {AuthoringError, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 try {
   writeXlsx(new Workbook()); // a package with no worksheets is corrupt
@@ -108,7 +108,7 @@ them would make this taxonomy a re-implementation of the language's. `getColumn(
 `RangeError`; a table that names a column twice is an `AuthoringError`.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('S');
 try {
@@ -138,7 +138,7 @@ The reference pages are generated from the types, so they cannot drift:
 - [`xlsx-errors`](../api/xlsx-errors.md), [`xlsb-errors`](../api/xlsb-errors.md) and
   [`xml-errors`](../api/xml-errors.md) for the per-codec parse failures.
 
-Every one of them lives in the `@shbernal/ts-xlsx/errors` subpath and nowhere else, because a
+Every one of them lives in the `@lofcz/ts-xlsx/errors` subpath and nowhere else, because a
 container-level failure belongs to no single codec. A service that only classifies failures
 can import that subpath alone and pay 12 KB rather than a parser.
 

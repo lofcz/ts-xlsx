@@ -1,18 +1,17 @@
+import {strFromU8} from 'fflate';
 // The OPC (Open Packaging Conventions) layer of the reader: reading a part's `.rels`, resolving a
 // part's declared content type, and walking the transitive closure of parts a preserved reference
 // reaches. Every helper here is pure over the inflated package: it takes part text/bytes accessors
 // and returns paths or records, touching no Workbook model. The path arithmetic those answers are
 // expressed in is `part-paths.ts`, which holds both directions of it.
 
-import {strFromU8} from 'fflate';
-
 import type {PreservedPart, PreservedRelationship} from '../../core/preserved.ts';
 import {isRelType} from '../../rel-type.ts';
 import {openElements} from '../../xml/xml-read.ts';
 import {extensionOf, relsPathFor, resolveRelativePart} from './part-paths.ts';
 import {DEFAULT_MAX_UNCOMPRESSED} from './read-options.ts';
+import {parseRelationshipRecords, type RelationshipRecord} from './relationship-records.ts';
 import {inflateSpreadsheetPackage} from './sniff-format.ts';
-import {transitionalRelationshipType} from './strict-relationships.ts';
 
 // The two ways a reader reaches into an inflated package: a part's UTF-8-decoded text, or its raw
 // bytes. Built once per read (see {@link packageAccessors}) so the buffered and streaming readers
@@ -135,31 +134,7 @@ export function packageAccessors(files: Record<string, Uint8Array>): PackageAcce
 // Target, and whether the target lies outside the package (`TargetMode="External"`). This is the one
 // shape a `.rels` part is read into; the narrower views above and below are projections of it, so the
 // element is scanned once and there is one answer to what counts as a relationship.
-export interface RelationshipRecord {
-  readonly id: string;
-  readonly type: string;
-  readonly target: string;
-  readonly external: boolean;
-}
-
-// OPC makes Id, Type and Target all mandatory, so an element missing any of the three is not a
-// relationship and is skipped rather than half-read.
-export function parseRelationshipRecords(xml: string): RelationshipRecord[] {
-  const records: RelationshipRecord[] = [];
-  for (const {attrs} of openElements(xml, 'Relationship')) {
-    if (attrs.Id !== undefined && attrs.Type !== undefined && attrs.Target !== undefined) {
-      records.push({
-        id: attrs.Id,
-        // In its Transitional spelling, so a Strict package's relationships are recognised by the same
-        // names and a preserved one is written back in the spelling of the package it lands in.
-        type: transitionalRelationshipType(attrs.Type),
-        target: attrs.Target,
-        external: attrs.TargetMode === 'External',
-      });
-    }
-  }
-  return records;
-}
+export {parseRelationshipRecords, type RelationshipRecord} from './relationship-records.ts';
 
 // One part's `.rels`, parsed once and then queried many times, with the owning part's path bound in so
 // every answer comes back as a package path rather than a target still needing resolution.

@@ -1,3 +1,4 @@
+import {strToU8, zip, zipSync} from 'fflate';
 // The buffered `.xlsx` writer: a Workbook model in, an OPC zip package out.
 //
 // A value the writer cannot represent faithfully is refused rather than emitted as a lossy or corrupt
@@ -6,8 +7,6 @@
 // This module is the orchestrator: it plans the package graph (via `package-plan.ts`) and
 // stitches the serialised parts (from `workbook-xml.ts` and `worksheet-xml.ts`) into the
 // part map. The row/cell renderer the streaming writer shares lives in `row-xml.ts`.
-
-import {strToU8, zip, zipSync} from 'fflate';
 
 import type {Person} from '../../core/comment-thread.ts';
 import {formulaNamesInScope} from '../../core/formula.ts';
@@ -20,6 +19,7 @@ import {relsPathFor, THEME_PART_PATH} from '../opc/part-paths.ts';
 import {relsPartXml} from '../opc/rels.ts';
 import {FIXED_ENTRY_MTIME} from '../opc/zip-mtime.ts';
 import {RICH_VALUE_STRUCTURES_XML, WorkbookMetadataTable} from './cell-metadata.ts';
+import {appendChartParts} from './chart-parts.ts';
 import {collectComments, commentsXml, liveCells, vmlDrawingXml} from './comments.ts';
 import {planHyperlinks} from './hyperlinks.ts';
 import {type DrawingImage, drawingXml} from './images.ts';
@@ -738,7 +738,17 @@ export function buildPackageParts(
     cellMetadata,
     flushed: options.flushed,
   });
-  return emitPackageParts({workbook, sheets, plan, styles, sharedStrings, cellMetadata, sheetXml});
+  const parts = emitPackageParts({
+    workbook,
+    sheets,
+    plan,
+    styles,
+    sharedStrings,
+    cellMetadata,
+    sheetXml,
+  });
+  appendChartParts(parts, sheets);
+  return parts;
 }
 
 /**

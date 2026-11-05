@@ -1,6 +1,6 @@
 {
-  "name": "@shbernal/ts-xlsx",
-  "version": "3.2.1",
+  "name": "@lofcz/ts-xlsx",
+  "version": "3.3.0",
   "description": "A TypeScript-first library for reading and writing xlsx (OOXML) spreadsheets.",
   "keywords": [
     "csv",
@@ -12,15 +12,15 @@
     "workbook",
     "xlsx"
   ],
-  "homepage": "https://shbernal.github.io/ts-xlsx/",
+  "homepage": "https://github.com/lofcz/ts-xlsx",
   "bugs": {
-    "url": "https://github.com/shbernal/ts-xlsx/issues"
+    "url": "https://github.com/lofcz/ts-xlsx/issues"
   },
   "license": "MIT",
   "author": "shbernal",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shbernal/ts-xlsx.git"
+    "url": "https://github.com/lofcz/ts-xlsx.git"
   },
   "files": [
     "dist",
@@ -118,7 +118,8 @@
     "test": "node scripts/verify.ts --full",
     "prepublishOnly": "pnpm run test && pnpm run smoke:dist",
     "validate:ooxml": "ooxml-validate",
-    "test:ooxml": "node test/ooxml-validation/run.ts"
+    "test:ooxml": "node test/ooxml-validation/run.ts",
+    "publish:first": "node scripts/bootstrap-publish.ts"
   },
   "dependencies": {
     "fflate": "^0.8.3"

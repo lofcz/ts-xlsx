@@ -224,6 +224,10 @@ class Worksheet {
   addImageAnchor(imageId: number, anchor: ImageAnchor, properties?: PictureProperties): void;
   removeImage(imageId: number): void;
   get images(): readonly AnchoredImage[];
+  addChart(options: ChartOptions, anchor: PixelAnchor): void;
+  addChartPart(part: ChartPart, anchor: ImageAnchor): void;
+  get charts(): readonly WorksheetChart[];
+  removeChart(index: number): void;
   addBackgroundImage(imageId: number): void;
   removeBackgroundImage(): void;
   get backgroundImageId(): number | undefined;
@@ -717,6 +721,38 @@ get images(): readonly AnchoredImage[];
 
 The images anchored to this sheet, in the order they were added.
 
+#### `Worksheet.addChart`
+
+```ts
+addChart(options: ChartOptions, anchor: PixelAnchor): void;
+```
+
+Author an editable chart, anchored like a picture in fractional cells and pixels.
+
+#### `Worksheet.addChartPart`
+
+```ts
+addChartPart(part: ChartPart, anchor: ImageAnchor): void;
+```
+
+Register a complete standard chart part; anchor coordinates and offsets are in cells/EMUs.
+
+#### `Worksheet.charts`
+
+```ts
+get charts(): readonly WorksheetChart[];
+```
+
+Authored charts as independent snapshots, in drawing order. Loaded charts remain preserved parts.
+
+#### `Worksheet.removeChart`
+
+```ts
+removeChart(index: number): void;
+```
+
+Remove an authored chart by its zero-based position.
+
 #### `Worksheet.addBackgroundImage`
 
 ```ts
@@ -1187,6 +1223,7 @@ interface WorksheetModel {
   dataValidations: DataValidationEntry[];
   conditionalFormattings: ConditionalFormatting[];
   tables: TableOptions[];
+  charts: WorksheetChart[];
   autoFilter: AutoFilter | undefined;
   protection: SheetProtection | undefined;
 }

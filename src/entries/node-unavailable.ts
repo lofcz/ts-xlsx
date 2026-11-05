@@ -1,4 +1,4 @@
-// What `@shbernal/ts-xlsx/node` resolves to when the environment is not Node.
+// What `@lofcz/ts-xlsx/node` resolves to when the environment is not Node.
 //
 // `package.json` points the `browser` condition at this module, so a bundler building for a tab
 // links it instead of `entries/node.ts` and never follows an import to `node:fs` or `node:stream`.

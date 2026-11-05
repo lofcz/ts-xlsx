@@ -1,11 +1,11 @@
 ---
 name: ts-xlsx-upstream
-description: Report a ts-xlsx (@shbernal/ts-xlsx) bug, gap, or wrong output to its GitHub tracker from a project that depends on it. Use when ts-xlsx throws an InternalError or an error whose message points at the issue tracker, when it cannot read a file that opens cleanly in Excel, when it writes a workbook Excel repairs or renders wrong, when its types block correct code, or whenever you are about to write a workaround for ts-xlsx behaving incorrectly. Filing the bug is the fix; the workaround is the stopgap.
+description: Report a ts-xlsx (@lofcz/ts-xlsx) bug, gap, or wrong output to its GitHub tracker from a project that depends on it. Use when ts-xlsx throws an InternalError or an error whose message points at the issue tracker, when it cannot read a file that opens cleanly in Excel, when it writes a workbook Excel repairs or renders wrong, when its types block correct code, or whenever you are about to write a workaround for ts-xlsx behaving incorrectly. Filing the bug is the fix; the workaround is the stopgap.
 ---
 
 # Reporting a ts-xlsx problem upstream
 
-You are in a project that _uses_ `@shbernal/ts-xlsx`, not the project that builds it.
+You are in a project that _uses_ `@lofcz/ts-xlsx`, not the project that builds it.
 This skill is how a defect you hit here becomes a permanent regression test there.
 
 The library's maintainers turn reports with a minimal reproduction into corpus cases,
@@ -40,7 +40,7 @@ as a feature request rather than a bug.
 ## 2. Collect the facts
 
 ```bash
-node -p "require('@shbernal/ts-xlsx/package.json').version"   # exact installed version
+node -p "require('@lofcz/ts-xlsx/package.json').version"   # exact installed version
 node -v                                                       # runtime
 ```
 
@@ -57,7 +57,7 @@ tracker, including "just a screenshot of the sheet".
 Instead, write a self-contained script that _constructs_ its input and fails:
 
 ```ts
-import {Workbook, writeXlsx, readXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx, readXlsx} from '@lofcz/ts-xlsx';
 
 // build the smallest workbook that shows the problem
 const workbook = new Workbook();

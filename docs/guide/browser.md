@@ -14,7 +14,7 @@ every error class. That is the buffered API, and it is the API most code uses.
 <!-- sample: illustrative. It needs a File from an input element, which a guide has none of. -->
 
 ```ts
-import {readXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx} from '@lofcz/ts-xlsx';
 
 input.addEventListener('change', async () => {
   const file = input.files?.[0];
@@ -30,7 +30,7 @@ than the library's:
 <!-- sample: illustrative. It needs a document to create the link in. -->
 
 ```ts
-import {writeXlsx} from '@shbernal/ts-xlsx';
+import {writeXlsx} from '@lofcz/ts-xlsx';
 
 const blob = new Blob([writeXlsx(workbook)], {
   type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -46,7 +46,7 @@ the environment provides them. It produces the same package byte for byte.
 ## What does not
 
 The streaming writer. It opens files and pipes Node streams, so it is published from
-`@shbernal/ts-xlsx/node` and the root specifier does not carry it. A browser build that
+`@lofcz/ts-xlsx/node` and the root specifier does not carry it. A browser build that
 imports that subpath anyway links a module whose classes throw by name. That is a clearer
 answer than a bundler error about `node:fs`. The streaming reader is a generator over
 Node buffers and is not available in a tab either. If your browser code needs either, it
@@ -59,7 +59,7 @@ encoders use the platform's `TextEncoder` and two small loops rather than `Buffe
 ## Nothing to configure
 
 There is no bundler alias to write and no `node:` specifier to stub out. Nothing reachable
-from `@shbernal/ts-xlsx`, `/core`, `/xlsx`, `/xlsb`, `/csv`, `/vba`, `/customui` or `/errors`
+from `@lofcz/ts-xlsx`, `/core`, `/xlsx`, `/xlsb`, `/csv`, `/vba`, `/customui` or `/errors`
 imports a Node built-in or reads a Node global. A CI check enforces that:
 `scripts/check-browser-safe.ts` walks the module graph from every one of those entries on
 every run, then walks the published build again from the emitted JavaScript. If a Node
@@ -71,7 +71,7 @@ condition to a module that throws with the name and the way out:
 <!-- sample: illustrative. It shows what a browser build links, which this page is not. -->
 
 ```ts
-import {WorkbookStreamWriter} from '@shbernal/ts-xlsx/node';
+import {WorkbookStreamWriter} from '@lofcz/ts-xlsx/node';
 
 // In a browser build:
 new WorkbookStreamWriter();
@@ -92,8 +92,8 @@ is the right default and unused modules are dropped whole. Reach for a subpath w
 rather the module graph itself said which half of the library you depend on:
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx/core';
-import {XlsxError} from '@shbernal/ts-xlsx/errors';
+import {Workbook} from '@lofcz/ts-xlsx/core';
+import {XlsxError} from '@lofcz/ts-xlsx/errors';
 
 const sheet = new Workbook().addWorksheet('S');
 sheet.getCell('A1').value = 'core alone, with no codec behind it';

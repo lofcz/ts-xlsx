@@ -1,4 +1,4 @@
-// Entry barrel for `@shbernal/ts-xlsx/errors`: the whole failure taxonomy, and nothing else.
+// Entry barrel for `@lofcz/ts-xlsx/errors`: the whole failure taxonomy, and nothing else.
 //
 // Every error class the library throws is exported here and from no other entry. That rule is
 // what keeps the entry barrels disjoint (a container-level failure belongs to no single codec:

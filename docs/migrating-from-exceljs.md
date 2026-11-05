@@ -25,7 +25,7 @@ await wb.xlsx.writeFile('out.xlsx');
 const buf = await wb.xlsx.writeBuffer();
 
 // ts-xlsx: I/O is separate from the model, synchronous, and Uint8Array in/out
-import {Workbook, readXlsx, writeXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, readXlsx, writeXlsx} from '@lofcz/ts-xlsx';
 import {readFileSync, writeFileSync} from 'node:fs';
 
 const wb = readXlsx(readFileSync('in.xlsx'));

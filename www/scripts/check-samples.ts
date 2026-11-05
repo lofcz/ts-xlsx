@@ -27,7 +27,7 @@ import {repoRoot} from './repo.ts';
 
 const GUIDE = resolve(repoRoot, 'docs', 'guide');
 const SCRATCH = resolve(repoRoot, '.tmp', 'guide-samples');
-const PACKAGE = '@shbernal/ts-xlsx';
+const PACKAGE = '@lofcz/ts-xlsx';
 
 /** Sits above a fence, with an optional reason after it. */
 const OPT_OUT = /^<!--\s*sample:\s*illustrative\b/;
@@ -86,7 +86,7 @@ function extract(source: string, page: string): Sample[] {
 /**
  * The specifier a reader writes, pointed at the tree this repository actually has.
  *
- * The guide has to show `@shbernal/ts-xlsx`, because that is what a reader types. Running
+ * The guide has to show `@lofcz/ts-xlsx`, because that is what a reader types. Running
  * that against the published package would test whatever version happens to be installed
  * rather than this commit, so the specifier is rewritten to the source barrel its subpath
  * maps to.

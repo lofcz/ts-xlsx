@@ -10,7 +10,7 @@ than a rectangle that looks like one.
 column 40 of a two-column sheet costs nothing and does not widen the sheet.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Sheet1');
 sheet.addRow(['Region', 'Revenue']);
@@ -32,7 +32,7 @@ because "the consumer's default" and "18 characters" are different facts.
 ## Merges
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Report');
@@ -52,7 +52,7 @@ and one that would is an `AuthoringError` rather than a file that opens wrong la
 ## Freezing headers
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Ledger');
@@ -77,7 +77,7 @@ a header row, an optional totals row, and a style from Excel's gallery. Formulas
 can refer to it structurally, as `Regions[Revenue]`.
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Regions');
@@ -108,7 +108,7 @@ writer that threw would make such a file impossible to round-trip.
 ## Autofilter and data validation
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Filtered');
@@ -133,7 +133,7 @@ console.log(sheet.dataValidationAt('B2')?.type); // 'decimal'
 rows to insert. Everything below moves, and so do the things anchored to it.
 
 ```ts
-import {Workbook} from '@shbernal/ts-xlsx';
+import {Workbook} from '@lofcz/ts-xlsx';
 
 const sheet = new Workbook().addWorksheet('Sheet1');
 sheet.addRows([['a'], ['b'], ['c']]);
@@ -151,7 +151,7 @@ row 3, now holding whatever moved there.
 ## Page setup, for a sheet that will be printed
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Print');

@@ -6,7 +6,7 @@ the package itself rather than from a file extension, so you never branch on whi
 holding, and the model you get is the same either way.
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const original = new Workbook();
 const built = original.addWorksheet('People');
@@ -26,7 +26,7 @@ than a case to handle.
 ## Walking a sheet
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Data');
@@ -49,7 +49,7 @@ is `undefined` for a sheet with nothing in it.
 To read a rectangle rather than a sheet, ask for a `Range`:
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Grid');
@@ -69,7 +69,7 @@ empty string, and `cellValueToText` is the total function over the union when yo
 and would rather not switch on nine kinds yourself.
 
 ```ts
-import {cellValueToText, readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {cellValueToText, readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Kinds');
@@ -98,7 +98,7 @@ untouched, so a load and save does not quietly delete them. They surface as _pre
 references, and each one carries the package parts it reaches.
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 source.addWorksheet('Plain').getCell('A1').value = 'nothing exotic';
@@ -125,7 +125,7 @@ the archive's declared sizes. A zip bomb that lies about its uncompressed size i
 the same. The ceiling defaults to 512 MiB and you can lower it:
 
 ```ts
-import {PackageReadError, readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {PackageReadError, readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('Big');

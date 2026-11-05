@@ -17,7 +17,7 @@ is a function call that hands you a model. One runtime dependency, and every beh
 pinned by a regression case.
 
 ```shell
-npm install @shbernal/ts-xlsx
+npm install @lofcz/ts-xlsx
 ```
 
 <QuickStart />

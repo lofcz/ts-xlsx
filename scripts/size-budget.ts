@@ -31,19 +31,21 @@ import {readPackageJson, ROOT} from './repo.ts';
 import {verdict} from './verdict.ts';
 
 const DIST = join(ROOT, 'dist');
-const TOTAL_BUDGET_BYTES = 685 * 1024;
+// Native chart authoring adds ~22 KB to the writer closures and ~4 KB to the model.
+// Keep headroom for that deliberate feature; relationship parsing stays independent of the reader.
+const TOTAL_BUDGET_BYTES = 725 * 1024;
 
 // Roughly a tenth of headroom over the measured closure, per entry: enough that ordinary growth is
 // not a chore, tight enough that a whole codec crossing a boundary cannot hide inside it.
 const ENTRY_BUDGETS_KB: Readonly<Record<string, number>> = {
-  '.': 673,
-  './core': 248,
-  './xlsx': 655,
-  './xlsb': 360,
-  './csv': 259,
+  '.': 715,
+  './core': 265,
+  './xlsx': 695,
+  './xlsb': 380,
+  './csv': 275,
   // The streaming writer and the write half it rides on, and nothing of the reader: a jump here is
   // the read path arriving, which would mean the entry had stopped being about one thing.
-  './node': 494,
+  './node': 535,
   './vba': 57,
   './customui': 16,
   // The taxonomy reaches nothing but itself, and that is the point: classifying a failure must

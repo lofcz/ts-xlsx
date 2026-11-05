@@ -14,7 +14,9 @@
         "guide/streaming",
         "guide/errors",
         "guide/browser",
-        "migrating-from-exceljs"
+        "migrating-from-exceljs",
+        "charts",
+        "publishing"
       ]
     },
     {

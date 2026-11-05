@@ -92,6 +92,12 @@ function recordsFacet<K extends 'rowBreaks' | 'columnBreaks'>(key: K): ModelFace
  */
 export const WORKSHEET_MODEL_FACETS = [
   facet(
+    'charts',
+    (sheet) => [...sheet.charts],
+    (sheet, charts) => sheet[INTERNAL].restoreCharts(charts),
+  ),
+
+  facet(
     'state',
     (sheet) => sheet.state,
     (sheet, value) => {

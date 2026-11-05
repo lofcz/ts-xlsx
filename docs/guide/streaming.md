@@ -12,7 +12,7 @@ when the file is small enough that none of this matters.
 ## Reading rows without building a workbook
 
 ```ts
-import {readSheetRows, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readSheetRows, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 const built = source.addWorksheet('People');
@@ -43,7 +43,7 @@ knowing, because both differ from the buffered model:
 ## Reading every sheet
 
 ```ts
-import {readWorkbookStream, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readWorkbookStream, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const source = new Workbook();
 source.addWorksheet('First').addRow(['a']);
@@ -64,12 +64,12 @@ behind it ever existing.
 ## Writing a workbook incrementally
 
 The streaming writer is the mirror: add a sheet, append rows, and commit each one to
-serialise it and let it go. It comes from `@shbernal/ts-xlsx/node` rather than from the root
+serialise it and let it go. It comes from `@lofcz/ts-xlsx/node` rather than from the root
 specifier, because it is the one part of the library that opens files and pipes Node streams;
 [in the browser](./browser.md) says what that boundary buys everything else.
 
 ```ts
-import {WorkbookStreamWriter} from '@shbernal/ts-xlsx/node';
+import {WorkbookStreamWriter} from '@lofcz/ts-xlsx/node';
 
 const writer = new WorkbookStreamWriter();
 const sheet = writer.addWorksheet('Big');
@@ -91,8 +91,8 @@ commit it, the writer renders its `<row>` and releases its cells. The same call 
 refused rather than emitting a second row carrying that number.
 
 ```ts
-import {AuthoringError} from '@shbernal/ts-xlsx';
-import {WorkbookStreamWriter} from '@shbernal/ts-xlsx/node';
+import {AuthoringError} from '@lofcz/ts-xlsx';
+import {WorkbookStreamWriter} from '@lofcz/ts-xlsx/node';
 
 const writer = new WorkbookStreamWriter();
 const sheet = writer.addWorksheet('Report');

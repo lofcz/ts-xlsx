@@ -23,6 +23,7 @@ import {
 } from 'ooxml-validate';
 
 import {scratchDir} from '../../scripts/repo.ts';
+import type {ChartType} from '../../src/core/chart.ts';
 import {Workbook} from '../../src/core/workbook.ts';
 import {readXlsx} from '../../src/io/xlsx/read.ts';
 import {WorkbookStreamWriter} from '../../src/io/xlsx/write-stream.ts';
@@ -119,6 +120,47 @@ async function writeBufferedWorkbook(file: string): Promise<void> {
     target: 'https://example.invalid/',
     tooltip: 'a tooltip & an ampersand',
   });
+  const chartTypes: ChartType[] = [
+    'column',
+    'bar',
+    'line',
+    'area',
+    'pie',
+    'doughnut',
+    'scatter',
+    'bubble',
+    'radar',
+  ];
+  for (const [index, type] of chartTypes.entries()) {
+    sheet.addChart(
+      {
+        type,
+        title: `${type} & labels`,
+        showValues: true,
+        series: [
+          {
+            name: 'Revenue',
+            color: '#336699',
+            values: {values: [1, 2, 3]},
+            xValues: {values: [0, 1, 2]},
+            bubbleSizes: {values: [2, 3, 4]},
+          },
+        ],
+      },
+      {tl: {col: 3, row: index * 20}, ext: {width: 480, height: 320}},
+    );
+  }
+  sheet.addChart(
+    {
+      type: 'column',
+      series: [
+        {name: 'Sales', values: {values: [1, 2]}},
+        {name: 'Margin', type: 'line', secondaryAxis: true, values: {values: [0.5, 0.7]}},
+      ],
+      secondaryValueAxis: {title: 'Margin', min: 0, max: 1, majorUnit: 0.1},
+    },
+    {tl: {col: 12, row: 0}, br: {col: 20, row: 20}},
+  );
   workbook.addWorksheet('Hidden', {state: 'veryHidden'});
   workbook.view.visibility = 'hidden';
   await writeFile(file, writeXlsx(workbook));
@@ -132,6 +174,10 @@ async function writeStreamingWorkbook(file: string, useSharedStrings: boolean): 
   sheet.addRow(['Name', 'Value']).commit();
   sheet.addRow(['alpha', 42]).commit();
   sheet.addRow(['beta', 7]).commit();
+  sheet.model.addChart(
+    {type: 'column', series: [{name: 'Values', values: {values: [42, 7]}}]},
+    {tl: {col: 3, row: 0}, ext: {width: 480, height: 320}},
+  );
   sheet.commit();
   // No sink was supplied, so the writer retains the package and `commit` resolves with it.
   const bytes = await writer.commit();

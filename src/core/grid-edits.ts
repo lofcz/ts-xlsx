@@ -1,11 +1,3 @@
-// Structural-edit machinery: the splice arithmetic that inserts or deletes whole rows and columns
-// and keeps everything anchored to the grid moving in step: line metadata and page breaks, merged
-// ranges, tables, anchored images, the coordinates a cell's value carries, and the range-bound
-// overlays (data validations, conditional formats, hyperlinks, comment threads, the autofilter). It is isolated
-// from Worksheet because it is pure grid mechanics: it holds the sheet's storage containers by
-// reference and mutates them in place, and touches none of the public cell API. Worksheet builds the cells an insert introduces, then hands
-// the pre-built rows (or the raw column values) here for the shift.
-
 import {
   boundedRect,
   decodeRange,
@@ -16,8 +8,16 @@ import {
   tryDecodeCellRef,
   tryDecodeRange,
 } from './address.ts';
+// Structural-edit machinery: the splice arithmetic that inserts or deletes whole rows and columns
+// and keeps everything anchored to the grid moving in step: line metadata and page breaks, merged
+// ranges, tables, anchored images, the coordinates a cell's value carries, and the range-bound
+// overlays (data validations, conditional formats, hyperlinks, comment threads, the autofilter). It is isolated
+// from Worksheet because it is pure grid mechanics: it holds the sheet's storage containers by
+// reference and mutates them in place, and touches none of the public cell API. Worksheet builds the cells an insert introduces, then hands
+// the pre-built rows (or the raw column values) here for the shift.
 import {type AutoFilter, shiftAutoFilter} from './autofilter.ts';
 import {Cell, copyCellContent} from './cell.ts';
+import {type WorksheetChart, spliceChart} from './chart.ts';
 import type {ConditionalFormattingOverlay} from './conditional-formatting-overlay.ts';
 import {replaceContents} from './containers.ts';
 import type {DataValidationOverlay} from './data-validation-overlay.ts';
@@ -62,6 +62,7 @@ interface GridStorage {
   readonly pivotTables: readonly PivotTable[];
   readonly loadedPivotTables: ParsedPivotTable[];
   readonly images: AnchoredImage[];
+  readonly charts: WorksheetChart[];
   readonly dataValidations: DataValidationOverlay;
   readonly conditionalFormattings: ConditionalFormattingOverlay;
   readonly hyperlinks: HyperlinkOverlay;
@@ -87,6 +88,7 @@ export class GridEdits {
   readonly #pivotTables: readonly PivotTable[];
   readonly #loadedPivotTables: ParsedPivotTable[];
   readonly #images: AnchoredImage[];
+  readonly #charts: WorksheetChart[];
   readonly #dataValidations: DataValidationOverlay;
   readonly #conditionalFormattings: ConditionalFormattingOverlay;
   readonly #hyperlinks: HyperlinkOverlay;
@@ -106,6 +108,7 @@ export class GridEdits {
     this.#pivotTables = storage.pivotTables;
     this.#loadedPivotTables = storage.loadedPivotTables;
     this.#images = storage.images;
+    this.#charts = storage.charts;
     this.#dataValidations = storage.dataValidations;
     this.#conditionalFormattings = storage.conditionalFormattings;
     this.#hyperlinks = storage.hyperlinks;
@@ -230,6 +233,10 @@ export class GridEdits {
    */
   spliceFormulas(edit: SheetSplice): void {
     const home = this.#sheetName();
+    replaceContents(
+      this.#charts,
+      this.#charts.map((chart) => spliceChart(chart, home, edit)),
+    );
     const {splice} = edit;
     const rewrite = (formula: string): string => spliceFormula(formula, home, edit);
     // A splice of another sheet moves no cell here, only what the formulas say.

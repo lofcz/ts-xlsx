@@ -1,7 +1,7 @@
 // The convenience entry point: everything the package exports, under one specifier.
 //
 // It is a union of the subpath entry barrels in `src/entries/`, which are the real public faces:
-// `@shbernal/ts-xlsx/core`, `/xlsx`, `/xlsb`, `/csv`, `/vba`, `/customui`, `/errors`. Each symbol
+// `@lofcz/ts-xlsx/core`, `/xlsx`, `/xlsb`, `/csv`, `/vba`, `/customui`, `/errors`. Each symbol
 // is listed in exactly one of them, so there is no second list to keep in step here and a star
 // re-export cannot silently drop a name to an ambiguity. `scripts/check-entries.ts` is what holds
 // the entries disjoint, which is the check that matters here because the failure it prevents is the
@@ -9,7 +9,7 @@
 //
 // One entry is deliberately absent: `/node`, the streaming writer, which imports `node:fs` and
 // `node:stream`. Unioning it here would put those on the graph of every consumer who wrote
-// `from '@shbernal/ts-xlsx'`, browser builds included, for a symbol they never named, which is
+// `from '@lofcz/ts-xlsx'`, browser builds included, for a symbol they never named, which is
 // how they got there in the first place (ADR 0040). Everything reachable from this file runs in a
 // tab, and `scripts/check-browser-safe.ts` walks the graph to keep that true.
 //

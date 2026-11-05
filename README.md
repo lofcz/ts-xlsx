@@ -1,8 +1,10 @@
 # ts-xlsx
 
-[![npm](https://img.shields.io/npm/v/%40shbernal%2Fts-xlsx)](https://www.npmjs.com/package/@shbernal/ts-xlsx)
-[![weekly downloads](https://img.shields.io/npm/dw/%40shbernal%2Fts-xlsx.svg?label=npm%20downloads&logo=npm)](https://www.npmjs.com/package/@shbernal/ts-xlsx)
-[![total downloads](https://img.shields.io/npm/dt/%40shbernal%2Fts-xlsx.svg?label=npm%20total%20downloads&logo=npm)](https://www.npmjs.com/package/@shbernal/ts-xlsx)
+The `@lofcz/ts-xlsx` fork of [shbernal/ts-xlsx](https://github.com/shbernal/ts-xlsx), maintained for TinySheet.
+
+[![npm](https://img.shields.io/npm/v/%40shbernal%2Fts-xlsx)](https://www.npmjs.com/package/@lofcz/ts-xlsx)
+[![weekly downloads](https://img.shields.io/npm/dw/%40shbernal%2Fts-xlsx.svg?label=npm%20downloads&logo=npm)](https://www.npmjs.com/package/@lofcz/ts-xlsx)
+[![total downloads](https://img.shields.io/npm/dt/%40shbernal%2Fts-xlsx.svg?label=npm%20total%20downloads&logo=npm)](https://www.npmjs.com/package/@lofcz/ts-xlsx)
 [![CI](https://github.com/shbernal/ts-xlsx/actions/workflows/build.yml/badge.svg)](https://github.com/shbernal/ts-xlsx/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -47,7 +49,7 @@ What that buys you today:
 ## Install
 
 ```shell
-npm install @shbernal/ts-xlsx
+npm install @lofcz/ts-xlsx
 ```
 
 Requires Node ≥ 24 (or any modern browser bundler). ESM only.
@@ -57,7 +59,7 @@ Requires Node ≥ 24 (or any modern browser bundler). ESM only.
 The buffered path is synchronous. `writeXlsx` returns the file bytes; `readXlsx` takes them back.
 
 ```ts
-import {Workbook, writeXlsx, readXlsx} from '@shbernal/ts-xlsx';
+import {Workbook, writeXlsx, readXlsx} from '@lofcz/ts-xlsx';
 
 // --- write ---
 const wb = new Workbook();
@@ -122,10 +124,11 @@ about row 500 costs nothing and does not extend the used range. Position is fixe
 Addresses are honest: an axis a reference doesn't mention is `undefined`, never a
 sentinel. See [`decodeAddress`](docs/api/addresses-ranges.md).
 
-Charts, vector shapes, slicers, and legacy form controls are **round-trip-only**: a
-workbook that has them keeps them byte-faithfully through a load/edit/save, but there is
-no API to author a new one. See [`docs/api/preserved.md`](docs/api/preserved.md) and
-[ADR-0014](docs/decisions/0014-charts-shapes-slicers-are-round-trip-only-for-1-0.md).
+Charts can be authored with `Worksheet.addChart`, including combinations and secondary axes.
+See [chart authoring](docs/charts.md). Existing charts, vector shapes, slicers and legacy
+form controls remain preserved through load/edit/save. See [preserved parts](docs/api/preserved.md).
+
+For first-time npm publishing and GitHub OIDC releases, see [publishing](docs/publishing.md).
 
 ## Reading, writing, streaming, CSV
 
@@ -138,10 +141,10 @@ import {
   readCsv,
   writeCsv, // CSV as Uint8Array
   writeCsvText, // CSV as a string
-} from '@shbernal/ts-xlsx';
+} from '@lofcz/ts-xlsx';
 // The streaming writer opens files and pipes Node streams, so it is the one Node-only face
 // and lives behind its own subpath. That keeps everything above browser-safe:
-import {WorkbookStreamWriter} from '@shbernal/ts-xlsx/node';
+import {WorkbookStreamWriter} from '@lofcz/ts-xlsx/node';
 
 // Bounded-memory extraction. The whole workbook is never materialized:
 for (const row of readSheetRows(bytes, {sheet: 'People'})) {
@@ -173,7 +176,7 @@ workbook, during which a server answers nothing. `writeXlsxAsync` produces the s
 with the compression handed to worker threads:
 
 ```ts
-import {writeXlsxAsync} from '@shbernal/ts-xlsx';
+import {writeXlsxAsync} from '@lofcz/ts-xlsx';
 
 const bytes = await writeXlsxAsync(wb); // same package, event loop stays live
 ```
@@ -203,15 +206,15 @@ on, as in a Lambda with no bundler or a service that only classifies failures:
 
 | Import from                  | You get                                                                        | It loads |
 | ---------------------------- | ------------------------------------------------------------------------------ | -------- |
-| `@shbernal/ts-xlsx`          | everything except the streaming writer                                         | 501 KB   |
-| `@shbernal/ts-xlsx/core`     | `Workbook`, `Worksheet`, `Cell`, styles, values, addresses                     | 185 KB   |
-| `@shbernal/ts-xlsx/xlsx`     | `readXlsx`, `writeXlsx`/`writeXlsxAsync`, the streaming reader, VBA part edits | 490 KB   |
-| `@shbernal/ts-xlsx/xlsb`     | `readXlsb`                                                                     | 256 KB   |
-| `@shbernal/ts-xlsx/csv`      | `readCsv`, `writeCsv`, `writeCsvText`                                          | 191 KB   |
-| `@shbernal/ts-xlsx/node`     | `WorkbookStreamWriter` and the rest of the streaming writer                    | 358 KB   |
-| `@shbernal/ts-xlsx/vba`      | `parseVbaProject`, `addVbaReference`, `removeVbaModule`                        | 46 KB    |
-| `@shbernal/ts-xlsx/customui` | `parseCustomUi` and the ribbon types                                           | 15 KB    |
-| `@shbernal/ts-xlsx/errors`   | every error class the library throws                                           | 3 KB     |
+| `@lofcz/ts-xlsx`          | everything except the streaming writer                                         | 501 KB   |
+| `@lofcz/ts-xlsx/core`     | `Workbook`, `Worksheet`, `Cell`, styles, values, addresses                     | 185 KB   |
+| `@lofcz/ts-xlsx/xlsx`     | `readXlsx`, `writeXlsx`/`writeXlsxAsync`, the streaming reader, VBA part edits | 490 KB   |
+| `@lofcz/ts-xlsx/xlsb`     | `readXlsb`                                                                     | 256 KB   |
+| `@lofcz/ts-xlsx/csv`      | `readCsv`, `writeCsv`, `writeCsvText`                                          | 191 KB   |
+| `@lofcz/ts-xlsx/node`     | `WorkbookStreamWriter` and the rest of the streaming writer                    | 358 KB   |
+| `@lofcz/ts-xlsx/vba`      | `parseVbaProject`, `addVbaReference`, `removeVbaModule`                        | 46 KB    |
+| `@lofcz/ts-xlsx/customui` | `parseCustomUi` and the ribbon types                                           | 15 KB    |
+| `@lofcz/ts-xlsx/errors`   | every error class the library throws                                           | 3 KB     |
 
 `/node` is the only one the root specifier does not carry, and the reason is its imports
 rather than its size: it reaches `node:fs` and `node:stream`, and every other entry reaches
@@ -252,7 +255,7 @@ minimal reproduction, which is what the maintainers convert into a permanent reg
 test. It ships inside the package, so it is already on disk:
 
 ```shell
-npx skills add ./node_modules/@shbernal/ts-xlsx     # offline, matches your installed version
+npx skills add ./node_modules/@lofcz/ts-xlsx     # offline, matches your installed version
 npx skills add shbernal/ts-xlsx                     # or straight from the repo
 ```
 

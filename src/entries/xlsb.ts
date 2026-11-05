@@ -1,4 +1,4 @@
-// Entry barrel for `@shbernal/ts-xlsx/xlsb`: the BIFF12 reader.
+// Entry barrel for `@lofcz/ts-xlsx/xlsb`: the BIFF12 reader.
 //
 // `readXlsx` auto-detects and reads a binary `.xlsb` too, so most callers never name this; it is
 // public for the caller that holds bytes it already knows to be `.xlsb` and wants to say so. That

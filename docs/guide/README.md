@@ -5,7 +5,7 @@ speaks `Uint8Array`, so writing a workbook is a function call that hands you byt
 reading one is a function call that hands you a model.
 
 ```shell
-npm install @shbernal/ts-xlsx
+npm install @lofcz/ts-xlsx
 ```
 
 Node 24 or later, or any modern browser bundler. ESM only.
@@ -13,7 +13,7 @@ Node 24 or later, or any modern browser bundler. ESM only.
 ## Five lines
 
 ```ts
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 const sheet = workbook.addWorksheet('People');
@@ -31,7 +31,7 @@ library's:
 import {mkdtempSync, readFileSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {readXlsx, Workbook, writeXlsx} from '@shbernal/ts-xlsx';
+import {readXlsx, Workbook, writeXlsx} from '@lofcz/ts-xlsx';
 
 const workbook = new Workbook();
 workbook.addWorksheet('Sheet1').getCell('A1').value = 'hello';

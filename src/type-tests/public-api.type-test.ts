@@ -4,6 +4,11 @@
 // I/O, the optionality of an address's col/row, the membership of CellValue.
 
 import type {
+  ChartOptions,
+  ChartPart,
+  PixelAnchor,
+  ImageAnchor,
+  WorksheetChart,
   ArrayFormulaValue,
   AuthoringError,
   CellAddress,
@@ -172,3 +177,12 @@ export type ErrorTaxonomyContracts = [
   // where `code` is only the branch for what kind of failure.
   Expect<Equal<UnsupportedFormatError['format'], UnsupportedFormat>>,
 ];
+
+// Chart authoring is a public, precisely typed surface on the worksheet.
+export type ChartAuthoringArguments = Expect<
+  Equal<Parameters<Worksheet['addChart']>, [options: ChartOptions, anchor: PixelAnchor]>
+>;
+export type ChartPartArguments = Expect<
+  Equal<Parameters<Worksheet['addChartPart']>, [part: ChartPart, anchor: ImageAnchor]>
+>;
+export type AuthoredChartCollection = Expect<Equal<Worksheet['charts'], readonly WorksheetChart[]>>;

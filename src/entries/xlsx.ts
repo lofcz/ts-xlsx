@@ -1,4 +1,4 @@
-// Entry barrel for `@shbernal/ts-xlsx/xlsx`, the XML codec: whole-workbook read and write, the
+// Entry barrel for `@lofcz/ts-xlsx/xlsx`, the XML codec: whole-workbook read and write, the
 // streaming reader, and the in-place VBA part edits.
 //
 // The streaming reader's entry points are public; the granular per-row/cell/sheet output shapes
