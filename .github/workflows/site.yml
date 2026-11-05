@@ -55,7 +55,8 @@ jobs:
   deploy:
     name: Publish to GitHub Pages
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # This fork retains the docs build gate; only upstream has a Pages deployment.
+    if: github.repository == 'shbernal/ts-xlsx' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # `pages: write` to publish and `id-token: write` because deploy-pages authenticates with
