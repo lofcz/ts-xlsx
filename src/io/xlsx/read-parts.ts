@@ -319,6 +319,12 @@ export function readWorkbookPreservedReferences(
   const {workbook} = context;
   const {cacheIdByRelId, externalIndexByRelId} = registrations;
   for (const record of workbookRels.records) {
+    // This cache uses source sheet IDs and formula coordinates. Both can change
+    // during editing or serialization; Excel must rebuild it from the live cells.
+    if (!record.external && isAnyRelType(record.type, 'calcChain')) {
+      workbook.fullCalcOnLoad = true;
+      continue;
+    }
     if (
       record.external ||
       registrations.sheetRelIds?.has(record.id) ||

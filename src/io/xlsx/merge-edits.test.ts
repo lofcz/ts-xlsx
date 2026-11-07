@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 
+import {strToU8, unzipSync, zipSync} from 'fflate';
+
 import {INTERNAL} from '../../core/internal.ts';
 import {Workbook} from '../../core/workbook.ts';
 import {xmlTree, xmlChild, xmlChildren, xmlText} from '../../xml/xml-tree.ts';
@@ -9,6 +11,62 @@ import {nativeFeatureWorkbook} from './native-features.test-support.ts';
 import {patchParts, partMatching, assertRelationshipsWired} from './package.test-support.ts';
 import {readXlsx} from './read.ts';
 import {writeXlsx} from './write.ts';
+
+test('editing an expanded shared formula replaces its source group membership', () => {
+  const editor = new Workbook();
+  const sheet = editor.addWorksheet('Data');
+  sheet.getCell('B1').value = {formula: 'A1*2', result: 2};
+  sheet.getCell('B2').value = {formula: 'A2*2', result: 4};
+  const baseline = writeXlsx(editor);
+  const original = patchParts(baseline, {
+    'xl/worksheets/sheet1.xml': (xml) =>
+      xml
+        .replace('<f>A1*2</f>', '<f t="shared" ref="B1:B2" si="0">A1*2</f>')
+        .replace('<f>A2*2</f>', '<f t="shared" si="0"/>'),
+  });
+  sheet.getCell('B2').value = {formula: 'A2*3', result: 6};
+  const result = mergeXlsxEdits(original, baseline, writeXlsx(editor), {
+    sheets: [{name: 'Data', originalName: 'Data', baselineName: 'Data'}],
+  });
+  const value = readXlsx(result.data).requireWorksheet('Data').getCell('B2').value;
+  assert.deepEqual(value, {formula: 'A2*3', result: 6});
+  sheet.getCell('B1').value = 5;
+  sheet.getCell('B2').value = {formula: 'A2*2', result: 4};
+  const removedMaster = mergeXlsxEdits(original, baseline, writeXlsx(editor), {
+    sheets: [{name: 'Data', originalName: 'Data', baselineName: 'Data'}],
+  });
+  assert.deepEqual(readXlsx(removedMaster.data).requireWorksheet('Data').getCell('B2').value, {
+    formula: 'A2*2',
+    result: 4,
+  });
+});
+
+test('rewriting a workbook discards the source calculation chain and requests recalculation', () => {
+  const workbook = new Workbook();
+  workbook.addWorksheet('Data').getCell('A1').value = {formula: '1+1', result: 2};
+  const parts = unzipSync(writeXlsx(workbook));
+  parts['xl/calcChain.xml'] = strToU8(
+    '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><c r="A1" i="7"/></calcChain>',
+  );
+  const original = patchParts(zipSync(parts), {
+    'xl/_rels/workbook.xml.rels': (xml) =>
+      xml.replace(
+        '</Relationships>',
+        '<Relationship Id="rIdChain" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/></Relationships>',
+      ),
+    '[Content_Types].xml': (xml) =>
+      xml.replace(
+        '</Types>',
+        '<Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/></Types>',
+      ),
+  });
+  const loaded = readXlsx(original);
+  loaded.requireWorksheet('Data').getCell('A1').value = 5;
+  const output = writeXlsx(loaded);
+  assert.doesNotMatch(partMatching(output, /^xl\/_rels\/workbook.xml.rels$/), /calcChain/);
+  assert.doesNotMatch(partMatching(output, /^\[Content_Types\].xml$/), /calcChain/);
+  assert.match(partMatching(output, /^xl\/workbook.xml$/), /fullCalcOnLoad="1"/);
+});
 
 test('picture movement in a mixed drawing preserves charts, shapes and their relationships', () => {
   const workbook = nativeFeatureWorkbook();

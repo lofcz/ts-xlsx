@@ -1,6 +1,7 @@
 import type {WorksheetChart} from '../../core/chart.ts';
 import {INTERNAL} from '../../core/internal.ts';
 import {modelEqual, patchKeyed, patchModel} from '../../core/model-patch.ts';
+import {isFormulaValue, isSharedFormulaValue} from '../../core/value.ts';
 import type {Workbook} from '../../core/workbook.ts';
 import type {Worksheet} from '../../core/worksheet.ts';
 import {AuthoringError} from '../../errors.ts';
@@ -125,6 +126,38 @@ function mergeSheet(
     next.cells,
     (cell) => `${cell.row}:${cell.col}`,
   );
+  const previousCells = new Map(previous.cells.map((cell) => [`${cell.row}:${cell.col}`, cell]));
+  const nextCells = new Map(next.cells.map((cell) => [`${cell.row}:${cell.col}`, cell]));
+  for (const cell of cells) {
+    const key = `${cell.row}:${cell.col}`;
+    const old = previousCells.get(key),
+      editedCell = nextCells.get(key);
+    if (
+      editedCell &&
+      !modelEqual(old?.value, editedCell.value) &&
+      (isFormulaValue(cell.value) ||
+        isSharedFormulaValue(cell.value) ||
+        isFormulaValue(editedCell.value) ||
+        isSharedFormulaValue(editedCell.value))
+    ) {
+      // A formula edit owns its whole value. Retaining the source's shared-formula
+      // anchor would silently replace the user's new expression on the next read.
+      cell.value = structuredClone(editedCell.value);
+    }
+    if (
+      editedCell &&
+      isSharedFormulaValue(cell.value) &&
+      cell.value.formula !== undefined &&
+      !isSharedFormulaValue(editedCell.value)
+    ) {
+      // Editors expose the expanded expression, not the source's compression
+      // group. A sibling must stay valid even when its former master is cleared.
+      cell.value = {
+        formula: cell.value.formula,
+        ...(cell.value.result === undefined ? {} : {result: cell.value.result}),
+      };
+    }
+  }
   const rows = patchKeyed(current.rows, previous.rows, next.rows, (row) => String(row.number));
   const columns = patchKeyed(current.columns, previous.columns, next.columns, (col) =>
     String(col.index),
