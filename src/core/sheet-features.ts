@@ -1,4 +1,5 @@
 import {decodeAddress, encodeAddress} from './address.ts';
+import {replaceContents} from './containers.ts';
 import {type SheetSplice, spliceFormula} from './formula-references.ts';
 import {isDeletedSpan, shiftIndex} from './grid-shift.ts';
 import {type ImageAnchor, isOneCellAnchor} from './image.ts';
@@ -72,7 +73,7 @@ export type WorksheetShape =
 
 export interface SheetFeatureStorage {
   readonly cellImages: CellImage[];
-  readonly checkboxes: string[];
+  readonly checkboxes: Set<string>;
   readonly sparklines: SparklineGroup[];
   readonly shapes: WorksheetShape[];
 }
@@ -100,9 +101,10 @@ export function spliceSheetFeatures(
     const ref = move(image.ref);
     return ref ? [{...image, ref}] : [];
   });
-  storage.cellImages.splice(0, Infinity, ...images);
-  const checkboxes = storage.checkboxes.map(move).filter((ref) => ref !== undefined);
-  storage.checkboxes.splice(0, Infinity, ...checkboxes);
+  replaceContents(storage.cellImages, images);
+  const checkboxes = [...storage.checkboxes].map(move).filter((ref) => ref !== undefined);
+  storage.checkboxes.clear();
+  for (const ref of checkboxes) storage.checkboxes.add(ref);
   const groups = storage.sparklines
     .map((group) => ({
       ...group,
@@ -113,7 +115,7 @@ export function spliceSheetFeatures(
       }),
     }))
     .filter((group) => group.sparklines.length);
-  storage.sparklines.splice(0, Infinity, ...groups);
+  replaceContents(storage.sparklines, groups);
   if (!local) return;
   const shapes = storage.shapes.map((shape) => {
     if (shape.kind === 'xml') return {...shape, splices: [...(shape.splices ?? []), edit]};
@@ -130,5 +132,5 @@ export function spliceSheetFeatures(
         : {...anchor, from: point(anchor.from), to: point(anchor.to)},
     };
   });
-  storage.shapes.splice(0, Infinity, ...shapes);
+  replaceContents(storage.shapes, shapes);
 }

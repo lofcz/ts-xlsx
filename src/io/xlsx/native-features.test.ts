@@ -9,6 +9,41 @@ import {assertRelationshipsWired, partMatching} from './package.test-support.ts'
 import {readXlsx} from './read.ts';
 import {writeXlsx} from './write.ts';
 
+test('large checkbox sheets author and round-trip within a bounded budget', () => {
+  const start = performance.now();
+  const workbook = new Workbook(),
+    sheet = workbook.addWorksheet('Checks');
+  for (let row = 1; row <= 50000; row++) sheet.addCheckbox(`A${row}`, row % 2 === 0);
+  sheet.addCheckbox('A1', true);
+  assert.equal(sheet.checkboxes.length, 50000);
+  const bytes = writeXlsx(workbook);
+  assert.ok(
+    performance.now() - start < 10000,
+    '50k checkboxes must not copy the full XML per cell',
+  );
+  const loaded = readXlsx(bytes).requireWorksheet('Checks');
+  assert.equal(loaded.checkboxes.length, 50000);
+  loaded.spliceRows(1, 1);
+  assert.equal(loaded.checkboxes.length, 49999);
+  loaded.removeCheckbox('A49999');
+  loaded.addCheckbox('A49999', true);
+  assert.equal(loaded.checkboxes.length, 49999);
+  assert.equal(loaded.getCell('A49999').value, true);
+});
+
+test('large feature collections survive model assignment and grid edits', () => {
+  const workbook = new Workbook(),
+    sheet = workbook.addWorksheet('Checks');
+  const model = sheet.model;
+  model.checkboxes = Array.from({length: 150000}, (_, i) => `A${i + 1}`);
+  sheet.model = model;
+  sheet.spliceRows(1, 1);
+  assert.equal(sheet.checkboxes.length, 149999);
+  assert.equal(sheet.checkboxes.at(-1), 'A149999');
+  sheet.addCheckbox('A149999');
+  assert.equal(sheet.checkboxes.length, 149999);
+});
+
 test('native features share drawing, media, styles and metadata through repeated round-trips', () => {
   let bytes = writeXlsx(nativeFeatureWorkbook());
   for (let i = 0; i < 3; i++) {

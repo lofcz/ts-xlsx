@@ -330,7 +330,7 @@ export class Worksheet {
   readonly #removedChartIds: string[] = [];
   readonly #cellImages: import('./sheet-features.ts').CellImage[] = [];
   readonly #sparklines: import('./sheet-features.ts').SparklineGroup[] = [];
-  readonly #checkboxes: string[] = [];
+  readonly #checkboxes = new Set<string>();
   readonly #shapes: import('./sheet-features.ts').WorksheetShape[] = [];
   readonly #removedShapeIds: string[] = [];
   readonly #preservedXml: string[] = [];
@@ -830,7 +830,7 @@ export class Worksheet {
     const cell = this.getCell(ref);
     if (checked !== undefined) cell.value = checked;
     else if (cell.value === null) cell.value = false;
-    if (!this.#checkboxes.includes(cell.address)) this.#checkboxes.push(cell.address);
+    this.#checkboxes.add(cell.address);
   }
 
   get checkboxes(): readonly string[] {
@@ -838,9 +838,7 @@ export class Worksheet {
   }
 
   removeCheckbox(ref: string): void {
-    const address = this.getCell(ref).address,
-      index = this.#checkboxes.indexOf(address);
-    if (index >= 0) this.#checkboxes.splice(index, 1);
+    this.#checkboxes.delete(this.getCell(ref).address);
   }
 
   /** Register a sparkline group. The source formula may reference another sheet. */
@@ -1710,7 +1708,7 @@ export interface WorksheetInternals {
   replacePreservedReferences(references: readonly PreservedWorksheetReference[]): void;
   readonly cellImages: import('./sheet-features.ts').CellImage[];
   readonly sparklines: import('./sheet-features.ts').SparklineGroup[];
-  readonly checkboxes: string[];
+  readonly checkboxes: Set<string>;
   readonly shapes: import('./sheet-features.ts').WorksheetShape[];
   readonly removedShapeIds: string[];
   /** Imported chart relationships explicitly removed by their owner. */

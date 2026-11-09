@@ -1,4 +1,5 @@
 import type {Worksheet} from '../../core/worksheet.ts';
+import {applyXmlEdits} from '../../xml/xml-edits.ts';
 import {tagRanges} from '../../xml/xml-read.ts';
 import {localName} from '../../xml/xml-scan.ts';
 import {escapeAttr, XML_DECLARATION} from '../../xml/xml.ts';
@@ -34,9 +35,7 @@ export function cellImageMetadata(
         .join('')}${tag.selfClosing ? '/' : ''}>`,
     });
   }
-  for (const edit of edits.reverse())
-    xml = xml.slice(0, edit.start) + edit.text + xml.slice(edit.end);
-  return xml;
+  return applyXmlEdits(xml, edits);
 }
 
 export function appendCellImageParts(

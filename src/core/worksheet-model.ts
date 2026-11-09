@@ -95,21 +95,22 @@ export const WORKSHEET_MODEL_FACETS = [
     'sparklines',
     (sheet) => [...sheet.sparklineGroups],
     (sheet, value) => {
-      sheet[INTERNAL].sparklines.splice(0, Infinity, ...structuredClone(value));
+      replaceContents(sheet[INTERNAL].sparklines, structuredClone(value));
     },
   ),
   facet(
     'checkboxes',
     (sheet) => [...sheet.checkboxes],
     (sheet, value) => {
-      sheet[INTERNAL].checkboxes.splice(0, Infinity, ...value);
+      sheet[INTERNAL].checkboxes.clear();
+      for (const ref of value) sheet[INTERNAL].checkboxes.add(ref);
     },
   ),
   facet(
     'shapes',
     (sheet) => [...sheet.shapes],
     (sheet, value) => {
-      sheet[INTERNAL].shapes.splice(0, Infinity, ...structuredClone(value));
+      replaceContents(sheet[INTERNAL].shapes, structuredClone(value));
     },
   ),
   facet(

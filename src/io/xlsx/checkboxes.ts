@@ -1,5 +1,6 @@
 import type {Worksheet} from '../../core/worksheet.ts';
 import {AuthoringError} from '../../errors.ts';
+import {applyXmlEdits} from '../../xml/xml-edits.ts';
 import {tagRanges} from '../../xml/xml-read.ts';
 import {localName} from '../../xml/xml-scan.ts';
 import {xmlChild, xmlChildren, xmlTree, xmlText, type XmlNode} from '../../xml/xml-tree.ts';
@@ -42,22 +43,20 @@ export function appendCheckboxParts(
     const cells = new Set(sheet.checkboxes);
     if (cells.size === 0) continue;
     const sheetPath = `xl/worksheets/sheet${index + 1}.xml`;
-    let xml = pkg.read(sheetPath);
-    const edits: {start: number; end: number; xml: string}[] = [];
+    const xml = pkg.read(sheetPath);
+    const edits: {start: number; end: number; text: string}[] = [];
     for (const tag of tagRanges(xml)) {
       if (tag.close || localName(tag.name) !== 'c' || !cells.has(tag.attrs.r ?? '')) continue;
       const attrs = {...tag.attrs, s: String(clone(Number(tag.attrs.s ?? 0)))};
       edits.push({
         start: tag.start,
         end: tag.end,
-        xml: `<${tag.name}${Object.entries(attrs)
+        text: `<${tag.name}${Object.entries(attrs)
           .map(([key, value]) => ` ${key}="${escapeAttr(value)}"`)
           .join('')}${tag.selfClosing ? '/' : ''}>`,
       });
     }
-    for (const edit of edits.reverse())
-      xml = xml.slice(0, edit.start) + edit.xml + xml.slice(edit.end);
-    pkg.write(sheetPath, xml);
+    pkg.write(sheetPath, applyXmlEdits(xml, edits));
   }
   cellXfs.attrs.count = String(xmlChildren(cellXfs, 'xf').length);
   pkg.writeTree('xl/styles.xml', styles);

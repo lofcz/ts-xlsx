@@ -34,7 +34,7 @@ export function readCellFeatures(
   for (const cell of openElements(xml, 'c')) {
     const ref = cell.attrs.r;
     if (!ref) continue;
-    if (formats.has(Number(cell.attrs.s))) sheet[INTERNAL].checkboxes.push(ref);
+    if (formats.has(Number(cell.attrs.s))) sheet[INTERNAL].checkboxes.add(ref);
     const vm = Number(cell.attrs.vm);
     if (!Number.isInteger(vm) || vm <= 0) continue;
     const record = metadata.valueBlocks[vm - 1]?.find(
