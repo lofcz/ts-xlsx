@@ -106,3 +106,51 @@ test('duplicate cell declarations resolve to the last source value', () => {
   );
   assert.equal(worksheetSourceCell(indexed, 1, 1), '<c r="A1"><v>2</v></c>');
 });
+
+test('compact cell indexing agrees with the general scanner across cell encodings', () => {
+  const cells = [
+    '<c r="A3" s="2" t="n"><v>17</v></c>',
+    '<c r="B3" t="inlineStr"><is><t>A &amp; B</t></is></c>',
+    '<c r="C3" t="s" s="1"><v>2</v></c>',
+    '<c r="D3" />',
+    '<c r="E3"><f>C3*2</f><v>4</v></c>',
+    '<c r="F3"><x:f xmlns:x="urn:test">C3*3</x:f><v>6</v></c>',
+    '<c r="G3" cm="1"/>',
+    '<c r="H3" vm="2"><v>8</v></c>',
+    "<c s='3' r='I3'><v>9</v></c>",
+    '<c r="&#74;3"><v>10</v></c>',
+    '<c r="k3"><v>11</v></c>',
+    '<c><f>K3+1</f><v>12</v></c>',
+    '<c r="M3" custom="a > b"><v>13</v></c>',
+    '<c r="N3" t="str"><v>&lt;f&gt;literal&lt;/f&gt;</v></c>',
+    '<c r="N3"><v>last</v></c>',
+  ];
+  const body = `<row r="3" ht="24">${cells.join('')}</row><row r="7"><c r="XFD7"/></row>`;
+  const plain = indexWorksheetSource(foreignSheet(body));
+  const general = indexWorksheetSource(
+    foreignSheet(body).replace('<sheetData>', '<sheetData><!-- general -->'),
+  );
+  assert.deepEqual(
+    [plain.rowCount, plain.columnCount, plain.cellCount],
+    [7, 16384, cells.length + 1],
+  );
+  assert.deepEqual(
+    [plain.rowCount, plain.columnCount, plain.cellCount],
+    [general.rowCount, general.columnCount, general.cellCount],
+  );
+  assert.equal(plain.metadataXml, general.metadataXml);
+  for (let c = 1; c <= 14; c++)
+    assert.equal(worksheetSourceCell(plain, 3, c), worksheetSourceCell(general, 3, c));
+  assert.equal(worksheetSourceCell(plain, 7, 16384), '<c r="XFD7"/>');
+  assert.match(plain.metadataXml, /<x:f/);
+  assert.match(plain.metadataXml, /r="L3"/);
+  assert.doesNotMatch(plain.metadataXml, /literal/);
+});
+
+test('compact cell indexing rejects invalid columns and truncated cell bodies', () => {
+  assert.throws(() => indexWorksheetSource(foreignSheet('<row><c r="XFE1"/></row>')), /column/);
+  assert.throws(
+    () => indexWorksheetSource(foreignSheet('<row><c r="A1"><v>1</v></row>')),
+    /Unclosed/,
+  );
+});

@@ -98,16 +98,18 @@ export function indexWorksheetSource(xml: string): WorksheetSource {
     rowStart = -1;
     rowCells = [];
   };
-  // Canonical cell bodies cannot contain literal '<' in text. Markup or
-  // prefixed tags use the full scanner below; ordinary values can be skipped
+  // Canonical cell bodies cannot contain literal '<' in text. Markup uses
+  // the full scanner below; ordinary values can be skipped
   // in one jump without allocating events for every <v>/<is>/<t> descendant.
   const declarationEnd = /^\s*<\?xml[\t\n\r ]/.test(xml) ? xml.indexOf('?>') + 2 : 0;
-  const simpleCells =
-    !xml.includes('<!--') &&
-    !xml.includes('<![CDATA[') &&
-    !/<\/?[\w.-]+:/.test(xml) &&
-    xml.indexOf('<?', declarationEnd) < 0;
-  let formulaAt = simpleCells ? xml.indexOf('<f') : -1;
+  const simpleCells = !xml.includes('<!') && xml.indexOf('<?', declarationEnd) < 0;
+  const formula = xml.includes(':f') ? /<(?:[^\s<>/:]+:)?f(?=[\s/>])/g : /<f(?=[\s/>])/g;
+  let formulaAt = simpleCells ? (formula.exec(xml)?.index ?? -1) : -1;
+  // The usual cell header needs only its address at indexing time. Styles and
+  // values stay in the source, so do not allocate/normalize their attributes.
+  // Metadata, alternate quoting/order, entities and other spellings continue
+  // through the general scanner. The sticky match never searches ahead.
+  const compactCell = /<c r="([A-Z]{1,3})[0-9]+"(?: [st]="[^"&<>]*")*\s*(\/?)>/y;
   const completeCell = (end: number): void => {
     if (cellStart >= 0) cells.push(column, cellStart, end);
     if (keepCell && cellStart >= 0) rowCells.push(cellOpen + xml.slice(cellOpenEnd, end));
@@ -116,6 +118,29 @@ export function indexWorksheetSource(xml: string): WorksheetSource {
   for (let offset = 0; offset < xml.length;) {
     const lt = xml.indexOf('<', offset);
     if (lt < 0) break;
+    if (simpleCells && rowStart >= 0) {
+      compactCell.lastIndex = lt;
+      const match = compactCell.exec(xml);
+      const letters = match?.[1];
+      if (match && letters !== undefined) {
+        column = 0;
+        for (let i = 0; i < letters.length; i++) column = column * 26 + letters.charCodeAt(i) - 64;
+        if (column > MAX_COLUMN) throw new XmlParseError('Invalid worksheet source column');
+        columnCount = Math.max(columnCount, column);
+        cellCount++;
+        const openEnd = compactCell.lastIndex;
+        offset = openEnd;
+        if (match[2] !== '/') {
+          const end = xml.indexOf('</c>', openEnd);
+          if (end < 0) throw new XmlParseError('Unclosed worksheet source cell');
+          while (formulaAt >= 0 && formulaAt < openEnd) formulaAt = formula.exec(xml)?.index ?? -1;
+          offset = end + 4;
+          if (formulaAt >= 0 && formulaAt < end) rowCells.push(xml.slice(lt, offset));
+        }
+        cells.push(column, lt, offset);
+        continue;
+      }
+    }
     const markup = markupAt(xml, lt);
     if (markup !== undefined) {
       offset = markup.next;
@@ -196,7 +221,7 @@ export function indexWorksheetSource(xml: string): WorksheetSource {
           const close = `</${tag.name}>`;
           const end = xml.indexOf(close, offset);
           if (end < 0) throw new XmlParseError('Unclosed worksheet source cell');
-          while (formulaAt >= 0 && formulaAt < offset) formulaAt = xml.indexOf('<f', formulaAt + 2);
+          while (formulaAt >= 0 && formulaAt < offset) formulaAt = formula.exec(xml)?.index ?? -1;
           if (formulaAt >= 0 && formulaAt < end) keepCell = true;
           offset = end + close.length;
           completeCell(offset);
