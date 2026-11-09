@@ -361,7 +361,7 @@ export const comments = {
   // Put a phonetic run (`<rPh>`, the furigana Japanese Excel stores beside a string's base text) in
   // each place a `CT_Rst` carries one: a pooled plain string on A1, a pooled rich string on A2, an
   // inline string on A3 and the note on A1. Read it, then write and read again → { read, rewritten },
-  // each { pooledPlain, pooledRichRuns, inline, note }, where the base text of every one is `漢字`
+  // each { pooledPlain, pooledRichRuns, inline, note }, with the same base ideographs in each
   // except the note's, which is `note`.
   phoneticRunReport() {
     const wb = new Workbook();

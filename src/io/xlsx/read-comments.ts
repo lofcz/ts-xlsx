@@ -51,7 +51,7 @@ export function parseComments(xml: string): Map<string, ParsedComment> {
   // A note's body is a `CT_Rst`, the grammar of a cell's `<si>` and `<is>`, so it is read by the same
   // machine: runs flattened to their text in document order, each `<t>` unescaped whole as a cell's is,
   // and a phonetic run's `<t>` left out. A capture of its own over `<text>` gathered every `<t>` beneath
-  // it, furigana included, so a note written `漢字` read back as `漢字かんじ`.
+  // it, furigana included, so a note read back with its phonetic reading appended to the base text.
   const bodyRuns = new RunAccumulator({container: 'text', readRuns: false});
   let body = '';
   parseXml(

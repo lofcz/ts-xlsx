@@ -13,12 +13,12 @@
 // authoring reaches them.
 //
 // The round-trip half is the same fact seen from the other side. A file that declares its own
-// font 0, whether Aptos Narrow, Arial 8 or 等线, must get it back unchanged. Replacing it with an
+// font 0, whether Aptos Narrow, Arial 8 or DengXian, must get it back unchanged. Replacing it with an
 // assumed Calibri
 // re-faces every empty cell and silently changes what every column width *means*, while populated
 // cells keep the real face through a redundant custom entry, so the damage hides.
 //
-// Note 等线 in particular: its theme's latin body face is Calibri, and Excel still wrote 等线 as font
+// Note DengXian in particular: its theme's latin body face is Calibri, and Excel still wrote it as font
 // 0, because it resolved the body face through the same `<a:minorFont>`'s `script="Hans"` entry. A
 // producer resolves that face by script; we do not. So a declared face has to outrank a derived one,
 // or a CJK workbook loses its typography on every save.

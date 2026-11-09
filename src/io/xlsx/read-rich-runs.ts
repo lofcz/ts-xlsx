@@ -6,8 +6,8 @@
 // plain text.
 //
 // A `<t>` inside an `<rPh>` is neither. A phonetic run holds the furigana Japanese Excel stores beside
-// the base text, in the same container as that text, so a machine gathering every `<t>` read `漢字` as
-// `漢字かんじ` and a save wrote the corruption back. The phonetic text is dropped, not modelled.
+// the base text, in the same container as that text. Gathering every `<t>` appended the phonetic
+// reading and a save wrote the corruption back. The phonetic text is dropped, not modelled.
 //
 // It drives itself, the way `CellAccumulator` and `TextCapture` do. {@link open}/{@link text}/
 // {@link close} are the element machine that the shared-string reader and the inline-string reader

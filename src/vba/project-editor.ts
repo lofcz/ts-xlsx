@@ -322,7 +322,7 @@ function removeModuleDirRecord(dir: Uint8Array, streamName: string, decoder: Dec
 // Remove a module's declaration line (`Module=`/`Class=`) and its `[Workspace]` line from the `PROJECT`
 // stream by splicing its bytes, so every other line is left exactly as it was, down to its line ending.
 // The stream is MBCS in the project code page, and re-encoding it after an edit could only invert what
-// the encoder knows, which under a multi-byte page is ASCII alone: a `Description="日本"` made removing
+// the encoder knows, which under a multi-byte page is ASCII alone: a non-ASCII Description made removing
 // an unrelated module throw. Each line is decoded only to be compared.
 function removeProjectStreamLines(
   stream: Uint8Array,

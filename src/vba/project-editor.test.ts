@@ -162,7 +162,7 @@ function projectWithStream(codePage: number, project: Uint8Array): Uint8Array {
 // The PROJECT stream is MBCS in the project's code page, and the encoder inverts only ASCII under a
 // multi-byte page, so re-encoding the stream after dropping a line threw over text nobody asked to change.
 test('removing a module leaves PROJECT text its code page cannot re-encode byte-identical', () => {
-  const nihon = [0x93, 0xfa, 0x96, 0x7b]; // 日本 in Shift_JIS
+  const nihon = [0x93, 0xfa, 0x96, 0x7b]; // The Japanese word for Japan, encoded in Shift_JIS.
   const kept = [
     ...ascii('ID="{00000000-0000-0000-0000-000000000000}"\r\nDescription="'),
     ...nihon,

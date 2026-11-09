@@ -3,7 +3,7 @@
 // Real-world scenario: a workbook authored in a CJK (Chinese) Excel locale stores date cells as
 // serial numbers styled with a locale-specific *built-in* number-format id. Excel reserves format
 // ids in the 27..58 range for locale-specific built-in date/time formats (e.g. id 57 renders like
-// "yyyy年m月", id 31 like "yyyy年m月d日"); because they are built-ins, Excel does NOT emit an
+// a year-month pattern, id 31 a year-month-day pattern); because they are built-ins, Excel does NOT emit an
 // explicit custom <numFmt> for them in styles.xml. A reader whose built-in numFmt table only covers
 // the standard Western ids (0..26, 37..49…) does not recognize such a cell as a date: the value
 // comes back as a bare number and the effective number-format code is empty, so downstream date

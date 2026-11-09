@@ -3,8 +3,8 @@
 // Real-world scenario: Japanese Excel stores the furigana reading of a string beside its base text, as
 // a phonetic run (`<rPh>`) inside the same string container: a shared-strings `<si>`, an inline
 // `<is>`, or a note's `<text>`. The phonetic run has a `<t>` of its own, and a reader that gathers every
-// `<t>` in the container appends the reading to the text it annotates, so a cell holding `漢字` reads
-// as `漢字かんじ`, and saving the workbook writes that corruption back as the cell's value. Every
+// `<t>` in the container appends the reading to the text it annotates, so base ideographs acquire
+// extra phonetic text, and saving the workbook writes that corruption back as the cell's value. Every
 // furigana-bearing cell in a Japanese workbook is affected.
 
 import type {Assert, Case, CorpusApi} from '../case.ts';

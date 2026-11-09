@@ -182,7 +182,7 @@ test('close reports the container so a caller knows when its string is complete'
 
 // ── Phonetic runs ────────────────────────────────────────────────────────────────────────────────────
 // `<rPh>` holds the furigana Japanese Excel stores beside a string's base text, in the same container
-// as that text. Gathering every `<t>` read `漢字` as `漢字かんじ`, pooled, inline and in a note alike.
+// as that text. Gathering every `<t>` appended the reading to pooled, inline and note text alike.
 
 const PHONETIC =
   '<rPh sb="0" eb="2"><t>かんじ</t></rPh><phoneticPr fontId="0" type="noConversion"/>';

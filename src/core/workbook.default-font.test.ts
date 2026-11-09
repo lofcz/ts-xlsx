@@ -1,7 +1,7 @@
 // The default-font chain: what an unstyled cell renders in, and which of the four levels wins.
 //
 // The invariant under nearly every case here is that a face a *file* declared outranks anything the
-// library would derive. A producer resolves the body face by script (Excel writes `等线` as font 0
+// library would derive. A producer resolves the body face by script (Excel writes DengXian as font 0
 // under a theme whose latin body face is Calibri) so deriving over a declaration silently rewrites
 // the face of every empty cell, and with it the metric every character-unit column width means.
 

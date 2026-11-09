@@ -593,7 +593,7 @@ The two authored levels outrank the file because authoring is an explicit act; b
 [`setDefaultFont`](./workbook.md#workbooksetdefaultfont) wins on the face because it names font 0 outright while
 [`setTheme`](./workbook.md#workbooksettheme) names it only by implication. With **nothing** authored the file's own font 0
 passes through verbatim. That is deliberate, because a producer resolves that face by script and
-we do not: Excel writes `等线` as font 0 under a theme whose latin body face is `Calibri`, and
+we do not: Excel writes DengXian as font 0 under a theme whose latin body face is `Calibri`, and
 re-deriving would silently rewrite it.
 
 `family` and `scheme` describe the *theme's* body face, so they are carried exactly while the

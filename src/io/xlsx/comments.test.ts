@@ -12,7 +12,7 @@ import {writeXlsx} from './write.ts';
 
 test('a note body reads its base text, not the phonetic run stored beside it', () => {
   // A note's `<text>` is a `CT_Rst`, so it can carry furigana (`<rPh>`) the way a cell's string can,
-  // and a capture over the whole body used to append it: `漢字` read back as `漢字かんじ`.
+  // and a capture over the whole body used to append the phonetic reading to the base text.
   const parsed = parseComments(
     '<comments><authors><author>a</author></authors><commentList>' +
       '<comment ref="A1" authorId="0"><text><r><t>漢字</t></r>' +
