@@ -2,6 +2,19 @@
 
 <!-- Generated from the public types by `pnpm run docs`. Do not edit by hand. -->
 
+### `indexSharedStrings`
+
+<sub>function</sub>
+
+Pairs of start/end offsets for shared string items in document order.
+Consumers can slice one complete `si` element without decoding the rest of the pool.
+
+```ts
+function indexSharedStrings(xml: string): Uint32Array;
+```
+
+---
+
 ### `indexWorksheetSource`
 
 <sub>function</sub>

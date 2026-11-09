@@ -1,6 +1,6 @@
 import {MAX_COLUMN, MAX_ROW, numberToColumn} from '../../core/address.ts';
 import {XmlParseError} from '../../xml/errors.ts';
-import {parseXml} from '../../xml/xml-read.ts';
+import {elementRanges, parseXml} from '../../xml/xml-read.ts';
 import {localName, markupAt, parseAttributes, tagAt} from '../../xml/xml-scan.ts';
 import {openSpreadsheetPackage, readPartRelationships} from '../opc/read-opc.ts';
 import type {ReadPackageOptions} from '../opc/read-options.ts';
@@ -32,6 +32,15 @@ export interface XlsxSource {
     readonly name: string;
     readonly path: string;
   })[];
+}
+
+/** Pairs of start/end offsets for shared string items in document order.
+ * Consumers can slice one complete `si` element without decoding the rest of the pool.
+ */
+export function indexSharedStrings(xml: string): Uint32Array {
+  const offsets: number[] = [];
+  for (const item of elementRanges(xml, 'si')) offsets.push(item.start, item.end);
+  return Uint32Array.from(offsets);
 }
 
 /** Open the package once and index worksheet rows for on-demand cell decoding. */
@@ -92,11 +101,12 @@ export function indexWorksheetSource(xml: string): WorksheetSource {
   // Canonical cell bodies cannot contain literal '<' in text. Markup or
   // prefixed tags use the full scanner below; ordinary values can be skipped
   // in one jump without allocating events for every <v>/<is>/<t> descendant.
+  const declarationEnd = /^\s*<\?xml[\t\n\r ]/.test(xml) ? xml.indexOf('?>') + 2 : 0;
   const simpleCells =
     !xml.includes('<!--') &&
     !xml.includes('<![CDATA[') &&
     !/<\/?[\w.-]+:/.test(xml) &&
-    xml.indexOf('<?', xml.indexOf('?>') + 2) < 0;
+    xml.indexOf('<?', declarationEnd) < 0;
   let formulaAt = simpleCells ? xml.indexOf('<f') : -1;
   const completeCell = (end: number): void => {
     if (cellStart >= 0) cells.push(column, cellStart, end);
@@ -241,7 +251,7 @@ export function worksheetSourceCell(
   if (index < 0) return undefined;
   const start = source.rowCellStarts[index] ?? 0;
   const end = source.rowCellStarts[index + 1] ?? start;
-  for (let i = start; i < end; i++) {
+  for (let i = end - 1; i >= start; i--) {
     if (source.cells[i * 3] === column)
       return source.xml.slice(source.cells[i * 3 + 1], source.cells[i * 3 + 2]);
   }

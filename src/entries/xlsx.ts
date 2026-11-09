@@ -17,6 +17,7 @@ export {readXlsx} from '../io/xlsx/read.ts';
 export {
   readXlsxSource,
   indexWorksheetSource,
+  indexSharedStrings,
   worksheetSourceRow,
   worksheetSourceCell,
   type WorksheetSource,

@@ -5,11 +5,29 @@ import {Workbook} from '../../core/workbook.ts';
 import {foreignPackage, foreignSheet, SHEET1} from './package.test-support.ts';
 import {
   indexWorksheetSource,
+  indexSharedStrings,
   readXlsxSource,
   worksheetSourceRow,
   worksheetSourceCell,
 } from './read-source.ts';
 import {writeXlsx} from './write.ts';
+
+test('shared string offsets preserve rich text, empty items and literal markup without decoding', () => {
+  const items = [
+    '<s:si><s:r><s:t>A &amp; B</s:t></s:r></s:si>',
+    '<s:si/>',
+    '<s:si><s:t><![CDATA[<si/>]]></s:t></s:si>',
+  ];
+  const xml = `<s:sst xmlns:s="urn:test"><!-- <si/> -->${items.join('')}</s:sst>`;
+  const offsets = indexSharedStrings(xml);
+  assert.equal(offsets.length, items.length * 2);
+  assert.deepEqual(
+    items.map((_, i) => xml.slice(offsets[i * 2], offsets[i * 2 + 1])),
+    items,
+  );
+  assert.equal(indexSharedStrings('<sst/>').length, 0);
+  assert.throws(() => indexSharedStrings('<sst><si><t>unfinished'));
+});
 
 test('opens a workbook as source without constructing cell values', () => {
   const wb = new Workbook();
@@ -73,4 +91,18 @@ test('retained metadata cells keep implicit row and column addresses after ordin
   const indexed = indexWorksheetSource(xml);
   assert.match(indexed.metadataXml, /<row r="2">/);
   assert.match(indexed.metadataXml, /<c r="B2"><f>A2\*2/);
+});
+
+test('processing instructions inside cells cannot truncate a source span', () => {
+  const cell = '<c r="A1"><v>1<?payload end="</c>"?></v></c>';
+  const xml = foreignSheet(`<row r="1">${cell}</row>`).replace(/^<\?xml[^?]*\?>/, '');
+  const indexed = indexWorksheetSource(xml);
+  assert.equal(worksheetSourceCell(indexed, 1, 1), cell);
+});
+
+test('duplicate cell declarations resolve to the last source value', () => {
+  const indexed = indexWorksheetSource(
+    foreignSheet('<row r="1"><c r="A1"><v>1</v></c><c r="A1"><v>2</v></c></row>'),
+  );
+  assert.equal(worksheetSourceCell(indexed, 1, 1), '<c r="A1"><v>2</v></c>');
 });

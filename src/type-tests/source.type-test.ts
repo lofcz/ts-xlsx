@@ -1,6 +1,7 @@
 import type {
   ReadPackageOptions,
   readXlsxSource,
+  indexSharedStrings,
   WorksheetSource,
   worksheetSourceRow,
   XlsxSource,
@@ -16,5 +17,6 @@ export type SourceContracts = [
   >,
   Expect<Equal<ReturnType<typeof readXlsxSource>, XlsxSource>>,
   Expect<Equal<WorksheetSource['rows'], Uint32Array>>,
+  Expect<Equal<ReturnType<typeof indexSharedStrings>, Uint32Array>>,
   Expect<Equal<ReturnType<typeof worksheetSourceRow>, string | undefined>>,
 ];
