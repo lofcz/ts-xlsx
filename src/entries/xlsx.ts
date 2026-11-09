@@ -15,6 +15,14 @@
 export {editXlsxVbaAddReference, editXlsxVbaRemoveModule} from '../io/xlsx/edit-vba.ts';
 export {readXlsx} from '../io/xlsx/read.ts';
 export {
+  readXlsxSource,
+  indexWorksheetSource,
+  worksheetSourceRow,
+  worksheetSourceCell,
+  type WorksheetSource,
+  type XlsxSource,
+} from '../io/xlsx/read-source.ts';
+export {
   type ReadSheetRowsOptions,
   readSheetRows,
   readWorkbookStream,
